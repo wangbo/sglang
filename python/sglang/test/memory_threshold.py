@@ -81,8 +81,11 @@ GPU_FAMILY_TOKENS = (
 MODULE_FLOORS_ATTR = "MEMORY_CAPACITY_FLOORS"
 # Optional per-class override.
 CLASS_FLOORS_ATTR = "memory_capacity_floors"
-# Per-owner launch counter attribute (mutated at runtime).
-_FLOOR_IDX_ATTR = "_memory_capacity_floor_idx"
+# Per-owner set of already-consumed floor indices (mutated at runtime).
+_FLOOR_USED_ATTR = "_memory_capacity_floors_used"
+# Pids already checked (avoids double claim when both popen_launch_server
+# and wait_server_ready run on the same process, e.g. EPD fixtures).
+_CHECKED_PIDS: set[int] = set()
 
 # ---- log line parsers (shared with the update script) ----
 
@@ -466,36 +469,72 @@ def _owner_label(owner: FloorOwner) -> str:
     return getattr(owner, "__name__", repr(owner))
 
 
-def claim_next_memory_floor(owner: FloorOwner) -> Optional[tuple[FloorDict, int]]:
-    """Return ``(floor, launch_idx)`` for the next server launch, or None."""
+def _counter_owner(owner: FloorOwner) -> FloorOwner:
+    """Owner that holds the floors list (class override or defining module)."""
+    if isinstance(owner, type):
+        class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
+        if class_floors is None:
+            mod = sys.modules.get(owner.__module__)
+            if mod is not None and getattr(mod, MODULE_FLOORS_ATTR, None) is not None:
+                return mod
+    return owner
+
+
+def _floor_match_distance(floor: FloorDict, observed: FloorDict) -> float:
+    """Distance for matching a floor to an observed snapshot (lower is better)."""
+    dist = 0.0
+    matched = False
+    for key, weight in (
+        ("token_capacity", 1.0),
+        ("kv_cache_gb", 1e3),
+        ("full_size", 1.0),
+        ("swa_size", 1.0),
+        ("mamba_cache_size", 1.0),
+    ):
+        if key in floor and key in observed:
+            matched = True
+            dist += weight * abs(float(floor[key]) - float(observed[key]))
+    return dist if matched else float("inf")
+
+
+def claim_matching_memory_floor(
+    owner: FloorOwner, observed: FloorDict
+) -> Optional[tuple[FloorDict, int]]:
+    """Claim the unused floor that best matches ``observed`` (not finish order).
+
+    Sequential finish order is unreliable when servers start concurrently
+    (PD/EPD threads) or when prefill/decode capacities differ.
+    """
     floors = _floors_from_owner(owner)
     if not floors:
         return None
     with _lock:
-        # Counter lives on the owner that actually holds the floors (class if
-        # class override, else the defining module) so multi-class files that
-        # share module floors share one sequence.
-        counter_owner: FloorOwner = owner
-        if isinstance(owner, type):
-            class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
-            if class_floors is None:
-                mod = sys.modules.get(owner.__module__)
-                if (
-                    mod is not None
-                    and getattr(mod, MODULE_FLOORS_ATTR, None) is not None
-                ):
-                    counter_owner = mod
-        idx = int(getattr(counter_owner, _FLOOR_IDX_ATTR, 0))
-        setattr(counter_owner, _FLOOR_IDX_ATTR, idx + 1)
-    if idx >= len(floors):
-        logger.info(
-            "Memory floors %s: launch[%d] beyond declared %d; skipping",
-            _owner_label(owner),
-            idx,
-            len(floors),
-        )
-        return None
-    return floors[idx], idx
+        counter_owner = _counter_owner(owner)
+        used = set(getattr(counter_owner, _FLOOR_USED_ATTR, set()))
+        candidates = [i for i in range(len(floors)) if i not in used]
+        if not candidates:
+            logger.info(
+                "Memory floors %s: all %d floors already claimed; skipping",
+                _owner_label(owner),
+                len(floors),
+            )
+            return None
+        # Prefer capacity match; fall back to declaration order if observed
+        # has no comparable fields (unit tests).
+        if observed:
+            best_i = min(
+                candidates, key=lambda i: _floor_match_distance(floors[i], observed)
+            )
+        else:
+            best_i = min(candidates)
+        used.add(best_i)
+        setattr(counter_owner, _FLOOR_USED_ATTR, used)
+    return floors[best_i], best_i
+
+
+def claim_next_memory_floor(owner: FloorOwner) -> Optional[tuple[FloorDict, int]]:
+    """Claim next unused floor in declaration order (tests / simple cases)."""
+    return claim_matching_memory_floor(owner, {})
 
 
 def find_active_test_owner() -> Optional[FloorOwner]:
@@ -516,7 +555,6 @@ def find_active_test_owner() -> Optional[FloorOwner]:
             continue
         if _raw_floors_from_owner(cls) is not None:
             return cls
-    # Fallback: __main__ module floors (``python path/to/test.py``).
     main = sys.modules.get("__main__")
     if main is not None and getattr(main, MODULE_FLOORS_ATTR, None) is not None:
         return main
@@ -532,12 +570,26 @@ def memory_threshold_check_enabled() -> bool:
     flag = os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower()
     if flag in ("0", "false", "no", "off"):
         return False
-    # Explicit force-on still runs even on AMD (for local experiments).
     if flag in ("1", "true", "yes", "on"):
         return True
     if os.environ.get("SGLANG_IS_IN_CI_AMD", "").lower() in ("1", "true", "yes"):
         return False
     return os.environ.get("SGLANG_IS_IN_CI", "").lower() in ("1", "true", "yes")
+
+
+def mark_process_memory_checked(process: Any) -> None:
+    pid = getattr(process, "pid", None)
+    if pid is not None:
+        with _lock:
+            _CHECKED_PIDS.add(int(pid))
+
+
+def process_memory_already_checked(process: Any) -> bool:
+    pid = getattr(process, "pid", None)
+    if pid is None:
+        return False
+    with _lock:
+        return int(pid) in _CHECKED_PIDS
 
 
 def maybe_check_server_memory(
@@ -546,13 +598,35 @@ def maybe_check_server_memory(
     api_key: Optional[str] = None,
     floor: Optional[FloorDict] = None,
     owner: Optional[FloorOwner] = None,
+    process: Any = None,
 ) -> None:
-    """Assert capacity against an explicit floor or the next declared floor.
+    """Assert capacity against an explicit floor or a matching declared floor.
 
-    No-op when disabled, when no floor is available, or when /server_info
-    cannot be queried. Raises ``AssertionError`` on regression.
+    No-op when disabled, when no floor is available, when this ``process`` was
+    already checked, or when /server_info cannot be queried. Raises
+    ``AssertionError`` on regression.
     """
     if not memory_threshold_check_enabled():
+        return
+
+    if process is not None and process_memory_already_checked(process):
+        logger.info(
+            "Memory floor check skipped for pid=%s: already checked",
+            getattr(process, "pid", None),
+        )
+        return
+
+    try:
+        observed = fetch_server_memory_snapshot(base_url, api_key=api_key)
+    except Exception as e:
+        logger.warning(
+            "Memory floor check skipped: failed to query /server_info (%s)",
+            e,
+        )
+        return
+
+    if not observed:
+        logger.warning("Memory floor check skipped: empty snapshot")
         return
 
     label = ""
@@ -561,27 +635,13 @@ def maybe_check_server_memory(
         owner = owner or find_active_test_owner()
         if owner is None:
             return
-        claimed = claim_next_memory_floor(owner)
+        claimed = claim_matching_memory_floor(owner, observed)
         if claimed is None:
             return
         floor, launch_idx = claimed
-        label = f"{_owner_label(owner)} launch[{launch_idx}]"
+        label = f"{_owner_label(owner)} floor[{launch_idx}]"
     else:
         label = "explicit floor"
-
-    try:
-        observed = fetch_server_memory_snapshot(base_url, api_key=api_key)
-    except Exception as e:
-        logger.warning(
-            "Memory floor check skipped for %s: failed to query /server_info (%s)",
-            label,
-            e,
-        )
-        return
-
-    if not observed:
-        logger.warning("Memory floor check skipped for %s: empty snapshot", label)
-        return
 
     logger.info("Memory floor check %s: observed=%s floor=%s", label, observed, floor)
     failures = check_snapshot_against_floor(observed, floor, label=label)
@@ -593,11 +653,14 @@ def maybe_check_server_memory(
             "intentional optimization via "
             "scripts/ci/utils/update_memory_thresholds.py"
         )
+    if process is not None:
+        mark_process_memory_checked(process)
 
 
 def reset_floor_counters(*owners: FloorOwner) -> None:
-    """Test helper: clear launch counters on the given owners."""
+    """Test helper: clear consumed-floor bookkeeping on the given owners."""
     with _lock:
         for owner in owners:
-            if hasattr(owner, _FLOOR_IDX_ATTR):
-                delattr(owner, _FLOOR_IDX_ATTR)
+            if hasattr(owner, _FLOOR_USED_ATTR):
+                delattr(owner, _FLOOR_USED_ATTR)
+        _CHECKED_PIDS.clear()

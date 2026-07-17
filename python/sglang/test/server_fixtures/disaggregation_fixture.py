@@ -181,10 +181,25 @@ class PDDisaggregationServerBase(CustomTestCase):
         # Prefill/decode sglang workers allocate KV pools; the LB/router does
         # not. popen_launch_pd_server only spawns (no health wait), so the
         # MEMORY_CAPACITY_FLOORS check runs here once the worker is healthy.
+        # EPD subclasses that used popen_launch_server already checked the
+        # same pid — _check_memory_or_kill / maybe_check skip duplicates.
         if process is None or process is getattr(cls, "process_lb", None):
             return
         base_url = url[: -len("/health")] if url.endswith("/health") else url
-        _check_memory_or_kill(process, base_url)
+        # On floor failure, kill every PD worker already started: unittest
+        # does not call tearDownClass after a setUpClass exception.
+        siblings = [
+            getattr(cls, name, None)
+            for name in (
+                "process_prefill",
+                "process_decode",
+                "process_encode",
+                "process_encode1",
+                "process_encode2",
+                "process_lb",
+            )
+        ]
+        _check_memory_or_kill(process, base_url, kill_processes=siblings)
 
     @classmethod
     def tearDownClass(cls):

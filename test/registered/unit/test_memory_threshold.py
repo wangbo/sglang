@@ -193,6 +193,22 @@ class TestFloorCheck(CustomTestCase):
         self.assertEqual(b, ({"token_capacity": 200}, 1))
         self.assertIsNone(c)
 
+    def test_claim_matching_by_capacity_not_order(self):
+        from sglang.test.memory_threshold import claim_matching_memory_floor
+
+        class _T(CustomTestCase):
+            memory_capacity_floors = [
+                {"token_capacity": 1000, "kv_cache_gb": 10.0},
+                {"token_capacity": 200, "kv_cache_gb": 2.0},
+            ]
+
+        reset_floor_counters(_T)
+        # Decode-sized observed first (concurrent race) should pair with floor[1].
+        b = claim_matching_memory_floor(_T, {"token_capacity": 210, "kv_cache_gb": 2.1})
+        a = claim_matching_memory_floor(_T, {"token_capacity": 990, "kv_cache_gb": 9.5})
+        self.assertEqual(b[1], 1)
+        self.assertEqual(a[1], 0)
+
     def test_gpu_family_from_text(self):
         self.assertEqual(gpu_family_from_text("NVIDIA H200"), "h200")
         self.assertEqual(

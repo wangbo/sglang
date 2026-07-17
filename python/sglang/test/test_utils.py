@@ -878,13 +878,15 @@ def _wait_for_server_health(
 
 
 def _maybe_check_server_memory_after_launch(
-    base_url: str, api_key: Optional[str] = None
+    base_url: str,
+    api_key: Optional[str] = None,
+    process: Optional[subprocess.Popen] = None,
 ) -> None:
     """Assert class/module MEMORY_CAPACITY_FLOORS via /server_info if declared."""
     try:
         from sglang.test.memory_threshold import maybe_check_server_memory
 
-        maybe_check_server_memory(base_url, api_key=api_key)
+        maybe_check_server_memory(base_url, api_key=api_key, process=process)
     except AssertionError:
         raise
     except Exception as e:
@@ -896,15 +898,30 @@ def _check_memory_or_kill(
     process: subprocess.Popen,
     base_url: str,
     api_key: Optional[str] = None,
+    kill_processes: Optional[list] = None,
 ) -> None:
-    """Run memory floor check if the test declared floors; kill process on fail."""
+    """Run memory floor check if floors are declared; kill process(es) on fail.
+
+    ``kill_processes`` defaults to ``[process]``. PD fixtures pass all started
+    workers so a failed prefill check also tears down decode (unittest does
+    not run tearDownClass after setUpClass failures).
+    """
     try:
-        _maybe_check_server_memory_after_launch(base_url, api_key=api_key)
+        _maybe_check_server_memory_after_launch(
+            base_url, api_key=api_key, process=process
+        )
     except AssertionError:
-        try:
-            kill_process_tree(process.pid)
-        except Exception as e:
-            print(f"Error killing process after memory threshold failure: {e}")
+        victims = kill_processes if kill_processes is not None else [process]
+        for proc in victims:
+            if proc is None:
+                continue
+            try:
+                kill_process_tree(proc.pid)
+            except Exception as e:
+                print(
+                    f"Error killing process {getattr(proc, 'pid', None)} "
+                    f"after memory threshold failure: {e}"
+                )
         raise
 
 
