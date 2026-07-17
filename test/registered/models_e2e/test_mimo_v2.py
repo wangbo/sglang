@@ -41,40 +41,6 @@ MIMO_V2_MTP_OTHER_ARGS = MIMO_V2_OTHER_ARGS + [
     "--enable-multi-layer-eagle",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3, 3, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 1079933,
-        "kv_cache_gb": 40.1676,
-        "swa_size": 863946,
-        "full_size": 1079933,
-        "swa_mem_gb": 45.9591,
-    },
-    {
-        "token_capacity": 1079933,
-        "kv_cache_gb": 0.0,
-        "swa_size": 863946,
-        "full_size": 1079933,
-        "swa_mem_gb": 1.0296,
-    },
-    {
-        "token_capacity": 863903,
-        "kv_cache_gb": 1.0296,
-        "swa_size": 863903,
-        "full_size": 1079880,
-        "swa_mem_gb": 45.9558,
-    },
-    {
-        "token_capacity": 1079880,
-        "kv_cache_gb": 0.0,
-        "swa_size": 863903,
-        "full_size": 1079880,
-        "swa_mem_gb": 1.0296,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestMiMoV2(GSM8KMixin, MMMUServerBase):
     gsm8k_accuracy_thres = 0.75

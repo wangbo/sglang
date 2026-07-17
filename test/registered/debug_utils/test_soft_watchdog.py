@@ -21,13 +21,6 @@ register_cuda_ci(est_time=120, suite="nightly-1-gpu", nightly=True)
 register_amd_ci(est_time=120, suite="nightly-amd-1-gpu", nightly=True)
 register_cpu_ci(est_time=622, suite="base-c-test-cpu")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 592538, "kv_cache_gb": 63.2808},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class BaseTestSoftWatchdog:
     env_override = None

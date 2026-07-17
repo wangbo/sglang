@@ -37,28 +37,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=500, stage="base-c", runner_config="4-gpu-h100")
 register_amd_ci(est_time=500, suite="stage-c-test-4-gpu-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 3589872, "kv_cache_gb": 53.9253},
-    {"token_capacity": 2045677, "kv_cache_gb": 62.4294},
-    {
-        "token_capacity": 189235,
-        "kv_cache_gb": 35.3034,
-        "swa_size": 528937,
-        "full_size": 661172,
-        "swa_mem_gb": 52.965,
-    },
-    {
-        "token_capacity": 2045677,
-        "kv_cache_gb": 62.4294,
-        "swa_size": 151387,
-        "full_size": 189235,
-        "swa_mem_gb": 32.4819,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestPPAccuracy(unittest.TestCase):
     @classmethod

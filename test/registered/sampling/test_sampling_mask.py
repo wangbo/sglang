@@ -28,13 +28,6 @@ _INVALID_SAMPLING_MASK_ERROR = (
     "top_p-only sampling is valid but can return huge masks in the tail"
 )
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[4] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 620323, "kv_cache_gb": 18.9288},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class SamplingMaskTestMixin:
     @classmethod

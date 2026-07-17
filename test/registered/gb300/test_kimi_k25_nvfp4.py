@@ -40,14 +40,6 @@ DP_EAGLE_ARGS = [
     "--speculative-num-draft-tokens=2",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=gb300 samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 2319736, "kv_cache_gb": 75.9132},
-    {"token_capacity": 1893893, "kv_cache_gb": 61.974},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestKimiK25Nvfp4(unittest.TestCase):
     """Kimi-K2.5 NVFP4 + EAGLE3 on GB300 (4x GB300 NVL4, tp=4)."""

@@ -16,13 +16,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=91, stage="base-b", runner_config="1-gpu-small")
 register_amd_ci(est_time=141, suite="stage-b-test-1-gpu-small-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 864704, "kv_cache_gb": 23.0868},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestOpenAIEmbedding(CustomTestCase):
     @classmethod

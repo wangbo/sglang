@@ -23,19 +23,6 @@ _COMMON_ARGS = [
     "triton",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 1372803,
-        "kv_cache_gb": 15.7014,
-        "mamba_cache_size": 784,
-        "mamba_conv_gb": 0.3267,
-        "mamba_ssm_gb": 13.8006,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _make_args(*, page_size=1, track_interval=2):
     return [

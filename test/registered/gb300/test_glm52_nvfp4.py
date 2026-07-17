@@ -34,14 +34,6 @@ DP_MTP_ARGS = [
     "--speculative-num-draft-tokens=2",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=gb300 samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 2542573, "kv_cache_gb": 130.7691},
-    {"token_capacity": 2150248, "kv_cache_gb": 110.5929},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestGlm52Nvfp4(unittest.TestCase):
     """GLM-5.2 NVFP4 on GB300 (4x GB300 NVL4, tp=4)."""

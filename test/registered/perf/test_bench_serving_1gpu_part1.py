@@ -22,17 +22,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=1210, stage="extra-a", runner_config="1-gpu-large")
 register_amd_ci(est_time=1100, suite="stage-b-test-1-gpu-large-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 406260, "kv_cache_gb": 49.599},
-    {"token_capacity": 406276, "kv_cache_gb": 49.599},
-    {"token_capacity": 313863, "kv_cache_gb": 38.313},
-    {"token_capacity": 406260, "kv_cache_gb": 49.599},
-    {"token_capacity": 376911, "kv_cache_gb": 46.0152},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestBenchServing1GPUPart1(CustomTestCase):
     def test_offline_throughput_default(self):

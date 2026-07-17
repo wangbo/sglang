@@ -45,28 +45,6 @@ MODEL_SCORE_THRESHOLDS = {
     "neuralmagic/Qwen2-57B-A14B-Instruct-FP8": 0.40,  # 44.66% measured - 5%
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 406260, "kv_cache_gb": 49.599},
-    {"token_capacity": 359262, "kv_cache_gb": 49.3416},
-    {"token_capacity": 414863, "kv_cache_gb": 56.9646},
-    {"token_capacity": 458833, "kv_cache_gb": 56.0142},
-    {"token_capacity": 471077, "kv_cache_gb": 57.4992},
-    {"token_capacity": 1720668, "kv_cache_gb": 49.8465},
-    {"token_capacity": 618643, "kv_cache_gb": 61.3602},
-    {"token_capacity": 26482, "kv_cache_gb": 4.0392},
-    {"token_capacity": 336419, "kv_cache_gb": 20.5326},
-    {"token_capacity": 396983, "kv_cache_gb": 10.593},
-    {"token_capacity": 197014, "kv_cache_gb": 30.0564},
-    {"token_capacity": 687117, "kv_cache_gb": 41.9364},
-    {"token_capacity": 188778, "kv_cache_gb": 28.809},
-    {"token_capacity": 1364400, "kv_cache_gb": 36.432},
-    {"token_capacity": 1952218, "kv_cache_gb": 56.5488},
-    {"token_capacity": 153877, "kv_cache_gb": 13.5036},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 # Do not use `CustomTestCase` since `test_gsm8k_all_models` does not want retry
 class TestNightlyGsm8KEval(unittest.TestCase):

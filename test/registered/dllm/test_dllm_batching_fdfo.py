@@ -19,13 +19,6 @@ from sglang.test.test_utils import (
     write_github_step_summary,
 )
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 1045218, "kv_cache_gb": 39.8772},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestBatchingFDFO(CustomTestCase):
     """End-to-end dLLM coverage on the default First-Done-First-Out scheduler."""

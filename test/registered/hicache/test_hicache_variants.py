@@ -3,16 +3,6 @@ from sglang.test.ci.ci_register import register_amd_ci, register_cuda_ci
 register_cuda_ci(est_time=450, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=524, suite="stage-b-test-1-gpu-small-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 297354, "kv_cache_gb": 36.3},
-    {"token_capacity": 1231659, "kv_cache_gb": 35.6796},
-    {"token_capacity": 406232, "kv_cache_gb": 49.599},
-    {"token_capacity": 323421, "kv_cache_gb": 39.4812},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 """
 Consolidated HiCache variant tests.
 Tests HiCache with different configurations: standard, MLA, EAGLE, and page size variants.

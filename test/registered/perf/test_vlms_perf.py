@@ -30,15 +30,6 @@ MODEL_DEFAULTS = [
     # "openbmb/MiniCPM-V-2_6",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[1, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 726759, "kv_cache_gb": 38.808},
-    {"token_capacity": 17085, "kv_cache_gb": 8.0784},
-    {"token_capacity": 662292, "kv_cache_gb": 30.3138},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestNightlyVLMModelsPerformance(unittest.TestCase):
     @classmethod

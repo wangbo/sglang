@@ -28,13 +28,6 @@ EXTRA_ARGS = [
     "--speculative-draft-model-quantization=unquant",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 244252, "kv_cache_gb": 7.9992},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestKimiK25Nvfp4Eagle(unittest.TestCase):
     """Kimi-K2.5 NVFP4 with EAGLE3 speculative decoding on 4x B200 (tp=4).

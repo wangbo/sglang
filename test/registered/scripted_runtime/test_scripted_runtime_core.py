@@ -27,15 +27,6 @@ _DECODE_MAX_NEW_TOKENS = 8
 
 _ENGINE_KWARGS = base_engine_kwargs(chunked_prefill_size=_CHUNK_SIZE)
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3, 2, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 240856, "kv_cache_gb": 25.7202},
-    {"token_capacity": 240856, "kv_cache_gb": 25.7202},
-    {"token_capacity": 240856, "kv_cache_gb": 25.7202},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _script_noop(t: ScriptedContext):
     yield

@@ -90,39 +90,6 @@ PERFORMANCE_BATCH_SIZES = {
     "high-throughput": [128],
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=gb300 samples=[1, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 1347287,
-        "dsv4_full": 1347287,
-        "dsv4_swa": 134576,
-        "dsv4_c4": 336821,
-        "dsv4_c128": 10525,
-        "dsv4_c4_state": 16822,
-        "dsv4_c128_state": 0,
-    },
-    {
-        "token_capacity": 261550,
-        "dsv4_full": 261550,
-        "dsv4_swa": 26104,
-        "dsv4_c4": 65387,
-        "dsv4_c128": 2043,
-        "dsv4_c4_state": 3263,
-        "dsv4_c128_state": 0,
-    },
-    {
-        "token_capacity": 1225889,
-        "dsv4_full": 1225889,
-        "dsv4_swa": 122411,
-        "dsv4_c4": 306472,
-        "dsv4_c128": 9577,
-        "dsv4_c4_state": 7650,
-        "dsv4_c128_state": 0,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestDeepSeekV4ProFp4(unittest.TestCase):
     """DeepSeek-V4-Pro FP4 on GB300 (4x B200 NVL4, tp=4)."""

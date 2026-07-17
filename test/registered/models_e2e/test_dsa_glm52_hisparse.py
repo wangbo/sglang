@@ -11,13 +11,6 @@ register_cuda_ci(est_time=720, stage="extra-b", runner_config="8-gpu-h200")
 
 GLM52_FP8_MODEL_PATH = "zai-org/GLM-5.2-FP8"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 157259, "kv_cache_gb": 20.7108},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestGLM52HiSparse(DefaultServerBase, GSM8KMixin):
     """GLM-5.2 FP8 with HiSparse (host-to-device sparse KV offload) on DSA decode.

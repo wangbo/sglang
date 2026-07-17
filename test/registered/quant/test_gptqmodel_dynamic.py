@@ -16,14 +16,6 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=100, stage="extra-a", runner_config="1-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 343197, "kv_cache_gb": 62.8452},
-    {"token_capacity": 324940, "kv_cache_gb": 59.499},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def check_quant_method(model_path: str, use_marlin_kernel: bool):
     from sglang.srt.configs.device_config import DeviceConfig

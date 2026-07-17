@@ -8,13 +8,6 @@ from sglang.test.mock_model.perturb_e2e_base import MockModelPerturbE2EBase
 register_cuda_ci(est_time=60, stage="extra-a", runner_config="1-gpu-small")
 register_amd_ci(est_time=131, stage="extra-a", runner_config="1-gpu-small-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 240856, "kv_cache_gb": 25.7202},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestPerturbNextTokenSwap(MockModelPerturbE2EBase):
     """Mock-model self-test: swap two reqs' sampled next tokens at the sampler exit.

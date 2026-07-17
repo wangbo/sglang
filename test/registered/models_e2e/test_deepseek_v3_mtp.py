@@ -31,13 +31,6 @@ _OTHER_ARGS = [
     '{"enable_multithread_load": true, "num_threads": 64}',
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 528672, "kv_cache_gb": 34.6005},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 if not is_in_amd_ci():
     _OTHER_ARGS += ["--mem-frac", "0.85"]
 

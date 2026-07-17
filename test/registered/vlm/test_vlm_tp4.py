@@ -21,19 +21,6 @@ QWEN35_27B_MODEL = "Qwen/Qwen3.5-27B"
 MMMU_ACCURACY_THRESHOLD = 0.65
 MMMU_NUM_EXAMPLES = 32
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[4] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 1665708,
-        "kv_cache_gb": 25.4232,
-        "mamba_cache_size": 1252,
-        "mamba_conv_gb": 0.8613,
-        "mamba_ssm_gb": 22.0275,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestVLMTP4(CustomTestCase):
     @classmethod

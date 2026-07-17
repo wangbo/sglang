@@ -24,39 +24,6 @@ SWA_COMMON_ARGS = [
     "--cuda-graph-backend-prefill=disabled",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 958256,
-        "kv_cache_gb": 21.9384,
-        "swa_size": 767230,
-        "full_size": 959038,
-        "swa_mem_gb": 39.5109,
-    },
-    {
-        "token_capacity": 959016,
-        "kv_cache_gb": 21.9582,
-        "swa_size": 766402,
-        "full_size": 958256,
-        "swa_mem_gb": 39.4812,
-    },
-    {
-        "token_capacity": 959038,
-        "kv_cache_gb": 21.9582,
-        "swa_size": 767162,
-        "full_size": 959016,
-        "swa_mem_gb": 39.5208,
-    },
-    {
-        "token_capacity": 959038,
-        "swa_size": 767230,
-        "full_size": 959038,
-        "swa_mem_gb": 39.5109,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestStreamingSessionSWA(StreamingSessionServerBase, StreamingSessionKitMixin):
     """Baseline streaming session on a hybrid-SWA model."""

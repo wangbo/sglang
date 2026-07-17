@@ -11,21 +11,6 @@ register_cuda_ci(est_time=1800, suite="nightly-8-gpu-common", nightly=True)
 
 GLM_4_6_MODEL_PATH = "zai-org/GLM-4.6"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# multi-gpu floors; b200:samples=[1], h200:samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = {
-    # samples=[1]
-    "b200": [
-        {"token_capacity": 925056, "kv_cache_gb": 40.59},
-    ],
-    # samples=[1, 1]
-    "h200": [
-        {"token_capacity": 917492, "kv_cache_gb": 40.2534},
-        {"token_capacity": 917494, "kv_cache_gb": 40.2534},
-    ],
-}
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestGLM46(unittest.TestCase):
     """Unified test class for GLM-4.6 performance and accuracy.

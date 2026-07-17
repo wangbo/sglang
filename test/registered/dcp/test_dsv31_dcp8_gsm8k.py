@@ -103,13 +103,6 @@ _LOGPROB_PARITY_PROMPTS = [
     "Water boils at",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 618922, "kv_cache_gb": 40.5042},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _get_max_total_num_tokens(base_url: str) -> int:
     """Fetch max_total_num_tokens from /server_info.

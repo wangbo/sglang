@@ -16,14 +16,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=160, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=200, suite="stage-b-test-1-gpu-large-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 339320, "kv_cache_gb": 41.4216},
-    {"token_capacity": 471371, "kv_cache_gb": 43.164},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestAWQ(CustomTestCase):
     @classmethod

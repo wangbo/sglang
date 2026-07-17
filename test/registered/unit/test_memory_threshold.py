@@ -1,245 +1,68 @@
-"""Unit tests for e2e memory-capacity log parsing and floor checks.
-
-Guards regressions in the log/HTTP snapshot parsers and the claim/check
-path that server-launching tests use with MEMORY_CAPACITY_FLOORS.
-"""
+"""Unit tests for the total_mb memory floor helper."""
 
 import unittest
 
 from sglang.test.ci.ci_register import register_cpu_ci
 from sglang.test.memory_threshold import (
-    check_snapshot_against_floor,
-    claim_next_memory_floor,
-    extract_snapshots_from_log,
+    claim_min_total_mb,
     gpu_family_from_text,
     mean_floor,
-    parse_memory_log_line,
     reset_floor_counters,
-    resolve_launch_floors,
-    snapshot_from_server_info,
+    resolve_min_total_memory_mb,
+    total_mb_from_server_info,
 )
 from sglang.test.test_utils import CustomTestCase
 
 register_cpu_ci(est_time=5, suite="base-a-test-cpu")
 
 
-class TestMemoryLogParsers(CustomTestCase):
-    def test_parse_kv_combined_size(self):
-        line = (
-            "KV Cache is allocated. dtype: torch.bfloat16, #tokens: 175135, "
-            "KV size: 3.76 GB"
-        )
-        snap = parse_memory_log_line(line)
-        self.assertEqual(snap["token_capacity"], 175135)
-        self.assertAlmostEqual(snap["kv_cache_gb"], 3.76)
-
-    def test_parse_kv_k_v_size(self):
-        line = (
-            "KV Cache is allocated. dtype: torch.bfloat16, #tokens: 12000, "
-            "K size: 0.07 GB, V size: 0.07 GB"
-        )
-        snap = parse_memory_log_line(line)
-        self.assertEqual(snap["token_capacity"], 12000)
-        self.assertAlmostEqual(snap["kv_cache_gb"], 0.14)
-
-    def test_parse_swa(self):
-        line = "SWAKVPool mem usage: 1.53 GB, swa size: 16384, full size: 81920"
-        snap = parse_memory_log_line(line)
-        self.assertEqual(snap["swa_size"], 16384)
-        self.assertEqual(snap["full_size"], 81920)
-        self.assertAlmostEqual(snap["swa_mem_gb"], 1.53)
-        self.assertEqual(snap["token_capacity"], 81920)
-
-    def test_parse_mamba(self):
-        line = (
-            "Mamba Cache is allocated. max_mamba_cache_size: 500, "
-            "conv_state size: 0.21GB, ssm_state size: 8.81GB"
-        )
-        snap = parse_memory_log_line(line)
-        self.assertEqual(snap["mamba_cache_size"], 500)
-        self.assertAlmostEqual(snap["mamba_conv_gb"], 0.21)
-        self.assertAlmostEqual(snap["mamba_ssm_gb"], 8.81)
-
-    def test_parse_dsv4(self):
-        line = (
-            "DSV4 pool sizes: full=19968, swa=4864, c4=4992, c128=156, "
-            "c4_state=608, c128_state=0"
-        )
-        snap = parse_memory_log_line(line)
-        self.assertEqual(snap["dsv4_full"], 19968)
-        self.assertEqual(snap["dsv4_swa"], 4864)
-        self.assertEqual(snap["dsv4_c4"], 4992)
-        self.assertEqual(snap["dsv4_c128"], 156)
-        self.assertEqual(snap["dsv4_c4_state"], 608)
-        self.assertEqual(snap["dsv4_c128_state"], 0)
-        self.assertEqual(snap["token_capacity"], 19968)
-
-    def test_tp_duplicates_collapsed_and_swa_merged(self):
-        text = """
-[TP0] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 774980, K size: 8.87 GB, V size: 8.87 GB
-[TP1] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 774980, K size: 8.87 GB, V size: 8.87 GB
-[TP0] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 968726, K size: 11.09 GB, V size: 11.09 GB
-[TP1] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 968726, K size: 11.09 GB, V size: 11.09 GB
-[TP0] SWAKVPool mem usage: 39.91 GB, swa size: 774980, full size: 968726
-[TP1] SWAKVPool mem usage: 39.91 GB, swa size: 774980, full size: 968726
-"""
-        snaps = extract_snapshots_from_log(text)
-        self.assertEqual(len(snaps), 1)
-        self.assertEqual(snaps[0].get("swa_size"), 774980)
-        self.assertEqual(snaps[0].get("full_size"), 968726)
-        self.assertEqual(snaps[0].get("token_capacity"), 968726)
-        self.assertAlmostEqual(snaps[0].get("swa_mem_gb"), 39.91)
-        self.assertAlmostEqual(snaps[0].get("kv_cache_gb"), 22.18)
-
-    def test_mamba_plus_kv_merge(self):
-        text = """
-Mamba Cache is allocated. max_mamba_cache_size: 500, conv_state size: 0.21GB, ssm_state size: 8.81GB
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 12000, K size: 0.07 GB, V size: 0.07 GB
-"""
-        snaps = extract_snapshots_from_log(text)
-        self.assertEqual(len(snaps), 1)
-        self.assertEqual(snaps[0]["mamba_cache_size"], 500)
-        self.assertEqual(snaps[0]["token_capacity"], 12000)
-        self.assertAlmostEqual(snaps[0]["kv_cache_gb"], 0.14)
-
-    def test_eagle_draft_target_collapsed_to_one_launch(self):
-        text = """
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33767, K size: 4.12 GB, V size: 4.12 GB
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33767, K size: 0.07 GB, V size: 0.07 GB
-"""
-        snaps = extract_snapshots_from_log(text)
-        self.assertEqual(len(snaps), 1)
-        self.assertEqual(snaps[0]["token_capacity"], 33767)
-        self.assertAlmostEqual(snaps[0]["kv_cache_gb"], 8.24)
-
-    def test_two_real_eagle_launches_kept_separate(self):
-        text = """
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 72610, K size: 4.44 GB, V size: 4.44 GB
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 72610, K size: 0.14 GB, V size: 0.14 GB
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 15685, K size: 3.83 GB, V size: 3.83 GB
-KV Cache is allocated. dtype: torch.bfloat16, #tokens: 15685, K size: 0.12 GB, V size: 0.12 GB
-"""
-        snaps = extract_snapshots_from_log(text)
-        self.assertEqual(len(snaps), 2)
-        self.assertEqual(snaps[0]["token_capacity"], 72610)
-        self.assertAlmostEqual(snaps[0]["kv_cache_gb"], 8.88)
-        self.assertEqual(snaps[1]["token_capacity"], 15685)
-        self.assertAlmostEqual(snaps[1]["kv_cache_gb"], 7.66)
-
-
-class TestServerInfoSnapshot(CustomTestCase):
-    def test_snapshot_from_server_info_top_level_and_internal(self):
+class TestTotalMbFloor(CustomTestCase):
+    def test_total_mb_from_server_info(self):
         info = {
-            "max_total_num_tokens": 1000,
             "internal_states": [
                 {
                     "memory_usage": {
-                        "token_capacity": 999,
-                        "kvcache": 3.5,
-                        "swa_size": 100,
-                        "full_size": 999,
-                        "mamba_cache_size": 50,
+                        "weight": 1.0,
+                        "kvcache": 2.0,
+                        "graph": 0.5,
+                        "total_mb": 3584.0,
                     }
                 }
-            ],
+            ]
         }
-        snap = snapshot_from_server_info(info)
-        self.assertEqual(snap["token_capacity"], 999)
-        self.assertAlmostEqual(snap["kv_cache_gb"], 3.5)
-        self.assertEqual(snap["swa_size"], 100)
-        self.assertEqual(snap["mamba_cache_size"], 50)
+        self.assertEqual(total_mb_from_server_info(info), 3584.0)
 
+    def test_total_mb_fallback_from_gb_components(self):
+        info = {"memory_usage": {"weight": 1.0, "kvcache": 1.0, "graph": 0.0}}
+        # 2 GB * 1024 = 2048 MB
+        self.assertEqual(total_mb_from_server_info(info), 2048.0)
 
-class TestFloorCheck(CustomTestCase):
+    def test_gpu_family(self):
+        self.assertEqual(gpu_family_from_text("NVIDIA H200"), "h200")
+        self.assertEqual(gpu_family_from_text("8-gpu-b200"), "b200")
+        self.assertEqual(gpu_family_from_text("base-b-test-1-gpu-small"), "5090")
+
+    def test_resolve_scalar_list_dict(self):
+        self.assertEqual(resolve_min_total_memory_mb(100), [100.0])
+        self.assertEqual(resolve_min_total_memory_mb([1, 2]), [1.0, 2.0])
+        self.assertEqual(
+            resolve_min_total_memory_mb({"h200": 10, "b200": 20}, gpu_family="b200"),
+            [20.0],
+        )
+        self.assertIsNone(resolve_min_total_memory_mb({"h200": 10}, gpu_family="b200"))
+
+    def test_claim_matches_closest(self):
+        class _T(CustomTestCase):
+            min_total_memory_mb = [1000.0, 200.0]
+
+        reset_floor_counters(_T)
+        b = claim_min_total_mb(_T, 210.0)
+        a = claim_min_total_mb(_T, 990.0)
+        self.assertEqual(b, (200.0, 1))
+        self.assertEqual(a, (1000.0, 0))
+
     def test_mean_floor(self):
         self.assertAlmostEqual(mean_floor([100.0, 100.0], factor=0.99), 99.0)
-
-    def test_check_passes_and_fails(self):
-        floor = {"token_capacity": 990, "kv_cache_gb": 3.0}
-        ok = check_snapshot_against_floor(
-            {"token_capacity": 1000, "kv_cache_gb": 3.1},
-            floor,
-            label="t",
-        )
-        self.assertEqual(ok, [])
-        bad = check_snapshot_against_floor(
-            {"token_capacity": 900, "kv_cache_gb": 3.1},
-            floor,
-            label="t",
-        )
-        self.assertEqual(len(bad), 1)
-        self.assertIn("token_capacity", bad[0])
-
-    def test_missing_observed_field_skipped(self):
-        failures = check_snapshot_against_floor(
-            {"token_capacity": 1000},
-            {"token_capacity": 990, "swa_size": 100},
-            label="t",
-        )
-        self.assertEqual(failures, [])
-
-    def test_claim_next_from_class_floors(self):
-        class _T(CustomTestCase):
-            memory_capacity_floors = [
-                {"token_capacity": 100},
-                {"token_capacity": 200},
-            ]
-
-        reset_floor_counters(_T)
-        a = claim_next_memory_floor(_T)
-        b = claim_next_memory_floor(_T)
-        c = claim_next_memory_floor(_T)
-        self.assertEqual(a, ({"token_capacity": 100}, 0))
-        self.assertEqual(b, ({"token_capacity": 200}, 1))
-        self.assertIsNone(c)
-
-    def test_claim_matching_by_capacity_not_order(self):
-        from sglang.test.memory_threshold import claim_matching_memory_floor
-
-        class _T(CustomTestCase):
-            memory_capacity_floors = [
-                {"token_capacity": 1000, "kv_cache_gb": 10.0},
-                {"token_capacity": 200, "kv_cache_gb": 2.0},
-            ]
-
-        reset_floor_counters(_T)
-        # Decode-sized observed first (concurrent race) should pair with floor[1].
-        b = claim_matching_memory_floor(_T, {"token_capacity": 210, "kv_cache_gb": 2.1})
-        a = claim_matching_memory_floor(_T, {"token_capacity": 990, "kv_cache_gb": 9.5})
-        self.assertEqual(b[1], 1)
-        self.assertEqual(a[1], 0)
-
-    def test_gpu_family_from_text(self):
-        self.assertEqual(gpu_family_from_text("NVIDIA H200"), "h200")
-        self.assertEqual(
-            gpu_family_from_text("nightly-test-general-8-gpu-b200"), "b200"
-        )
-        self.assertEqual(gpu_family_from_text("base-b-test-1-gpu-small"), "5090")
-        self.assertEqual(gpu_family_from_text("base-b-test-1-gpu-large"), "h100")
-        self.assertEqual(gpu_family_from_text("nightly-8-gpu-common"), None)
-
-    def test_resolve_multi_gpu_dict(self):
-        spec = {
-            "h200": [{"token_capacity": 100}],
-            "b200": [{"token_capacity": 200}],
-        }
-        self.assertEqual(
-            resolve_launch_floors(spec, gpu_family="h200"),
-            [{"token_capacity": 100}],
-        )
-        self.assertEqual(
-            resolve_launch_floors(spec, gpu_family="b200"),
-            [{"token_capacity": 200}],
-        )
-        # Missing GPU: do not fall back to another chip's floors.
-        self.assertIsNone(resolve_launch_floors(spec, gpu_family="h100"))
-
-    def test_resolve_list_is_universal(self):
-        spec = [{"token_capacity": 50}]
-        self.assertEqual(
-            resolve_launch_floors(spec, gpu_family="h200"),
-            [{"token_capacity": 50}],
-        )
 
 
 if __name__ == "__main__":

@@ -1,53 +1,42 @@
 #!/usr/bin/env python3
-"""Mine CI logs and rewrite MEMORY_CAPACITY_FLOORS in each e2e test file.
+"""Rewrite MIN_TOTAL_MEMORY_MB in e2e tests from CI logs or a JSON dump.
 
-Parses engine allocation lines from GitHub Actions job logs (KV / SWA / Mamba /
-DSV4), averages capacity metrics across recent runs, and writes floors at
-``mean * 0.99`` as a module-level list in each test file::
+``GET /server_info`` exposes ``memory_usage.total_mb`` (weights + KV + graph
++ mamba, in MB). Tests declare::
 
-    MEMORY_CAPACITY_FLOORS = [
-        {"token_capacity": 52358, "kv_cache_gb": 6.39},
-    ]
+    MIN_TOTAL_MEMORY_MB = 12345
+    # or per-GPU: MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
 
-Runtime: ``popen_launch_server`` / PD health calls ``GET /server_info`` and
-compares against the next unused floor (see ``sglang.test.memory_threshold``).
+This script mines scheduled/nightly job logs for lines that record total
+memory if present, otherwise falls back to summing weight/kv/graph GB lines
+when available. Prefer feeding server_info dumps once CI prints total_mb.
 
 Usage:
-    python3 scripts/ci/utils/update_memory_thresholds.py
     python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
-    python3 scripts/ci/utils/update_memory_thresholds.py --log-dir /tmp/ci_logs
-    python3 scripts/ci/utils/update_memory_thresholds.py --run-id 29458283004
-
-Requires ``gh`` authenticated against sgl-project/sglang for remote fetch.
+    python3 scripts/ci/utils/update_memory_thresholds.py --run-id ...
 """
 
 from __future__ import annotations
 
 import argparse
-import ast
 import json
 import re
 import subprocess
 import sys
 import tempfile
-import textwrap
 from collections import defaultdict
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "python"))
 
 from sglang.test.memory_threshold import (  # noqa: E402
-    CAPACITY_FIELDS,
     DEFAULT_FACTOR,
-    MODULE_FLOORS_ATTR,
-    extract_snapshots_from_log,
+    MODULE_MIN_ATTR,
     gpu_family_from_text,
     mean_floor,
-    normalize_test_file,
 )
 
 REPO = "sgl-project/sglang"
@@ -57,95 +46,63 @@ NIGHTLY_WORKFLOW = "nightly-test-nvidia.yml"
 TEST_START_RE = re.compile(
     r"python3\s+(?:\S*?/)?(?P<path>test/(?:registered|manual)/\S+\.py)"
 )
-FILENAME_END_RE = re.compile(
-    r"filename=['\"]?(?:\S+/)?(?P<path>test/(?:registered|manual)/\S+\.py)"
-)
 SUITE_FROM_RUN_SUITE_RE = re.compile(
     r"run_suite\.py\b[^\n]*?--suite\s+(?P<suite>[^\s\\]+)"
 )
-SUITE_FROM_JOB_RE = re.compile(
-    r"(?P<suite>"
-    r"(?:base|extra|stage)-[a-z]-[a-z0-9-]+"
-    r"|nightly-[a-z0-9-]+"
-    r"|per-commit-[a-z0-9-]+"
-    r")"
+# Prefer explicit total_mb once servers log it; also accept GB totals.
+TOTAL_MB_RE = re.compile(
+    r"(?:total_mb|memory_usage\.total_mb)[=:\s]+(?P<mb>[\d.]+)",
+    re.I,
+)
+# Fallback: sum weight + kv + graph from server logs if printed in GB.
+WEIGHT_GB_RE = re.compile(r"weight[=:\s]+(?P<v>[\d.]+)\s*GB", re.I)
+# KV size from allocation lines (already in our engine logs).
+KV_GB_RE = re.compile(
+    r"KV Cache is allocated\.[^\n]*?(?:KV size:\s*(?P<kv>[\d.]+)\s*GB|"
+    r"K size:\s*(?P<k>[\d.]+)\s*GB,\s*V size:\s*(?P<v>[\d.]+)\s*GB)"
+)
+GRAPH_GB_RE = re.compile(
+    r"(?:Capture cuda graph|cuda graph).*?mem usage=(?P<v>[\d.]+)\s*GB",
+    re.I,
+)
+MAMBA_GB_RE = re.compile(
+    r"Mamba Cache is allocated\.[^\n]*?"
+    r"conv_state size:\s*(?P<conv>[\d.]+)\s*GB,?\s*"
+    r"ssm_state size:\s*(?P<ssm>[\d.]+)\s*GB",
+    re.I,
 )
 
-# Marker comments around the injected block.
-_BEGIN = "# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---"
-_END = "# --- MEMORY_CAPACITY_FLOORS end ---"
-
-
-@dataclass
-class LaunchObservation:
-    suite: str
-    test_file: str
-    run_id: str
-    job_id: str
-    launch_idx: int
-    metrics: Dict[str, float]
-    gpu_family: str  # e.g. h200, b200, h100, 5090
-
-
-@dataclass
-class Aggregate:
-    samples: List[Dict[str, float]] = field(default_factory=list)
-
-    def add(self, metrics: Dict[str, float]) -> None:
-        self.samples.append(dict(metrics))
-
-    def floor(self, factor: float) -> Dict[str, float]:
-        by_field: Dict[str, List[float]] = defaultdict(list)
-        for s in self.samples:
-            for k, v in s.items():
-                if k in CAPACITY_FIELDS:
-                    by_field[k].append(float(v))
-        out: Dict[str, float] = {}
-        for k, vals in by_field.items():
-            fl = mean_floor(vals, factor=factor)
-            if k.endswith("_gb"):
-                out[k] = round(fl, 4)
-            else:
-                out[k] = int(fl)
-        return out
+_BEGIN = "# --- MIN_TOTAL_MEMORY_MB begin (auto; update_memory_thresholds.py) ---"
+_END = "# --- MIN_TOTAL_MEMORY_MB end ---"
 
 
 def _run(cmd: List[str], *, check: bool = True) -> str:
     r = subprocess.run(cmd, capture_output=True, text=True)
     if check and r.returncode != 0:
-        raise RuntimeError(
-            f"Command failed ({r.returncode}): {' '.join(cmd)}\n{r.stderr}"
-        )
+        raise RuntimeError(f"cmd failed: {' '.join(cmd)}\n{r.stderr}")
     return r.stdout
 
 
-def list_recent_runs(
-    workflow: str,
-    *,
-    event: Optional[str] = None,
-    limit: int = 5,
-    branch: str = "main",
-) -> List[dict]:
-    q = f"repos/{REPO}/actions/workflows/{workflow}/runs?per_page={limit}&branch={branch}"
+def list_recent_runs(workflow: str, *, event: Optional[str] = None, limit: int = 3):
+    q = f"repos/{REPO}/actions/workflows/{workflow}/runs?per_page={limit}&branch=main"
     if event:
         q += f"&event={event}"
-    raw = _run(["gh", "api", q])
-    data = json.loads(raw)
+    data = json.loads(_run(["gh", "api", q]))
     return [r for r in data.get("workflow_runs", []) if r.get("status") == "completed"]
 
 
-def list_jobs(run_id: int | str) -> List[dict]:
-    jobs: List[dict] = []
-    page = 1
+def list_jobs(run_id) -> list:
+    jobs, page = [], 1
     while True:
-        raw = _run(
-            [
-                "gh",
-                "api",
-                f"repos/{REPO}/actions/runs/{run_id}/jobs?per_page=100&page={page}",
-            ]
+        data = json.loads(
+            _run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{REPO}/actions/runs/{run_id}/jobs?per_page=100&page={page}",
+                ]
+            )
         )
-        data = json.loads(raw)
         batch = data.get("jobs", [])
         if not batch:
             break
@@ -156,7 +113,7 @@ def list_jobs(run_id: int | str) -> List[dict]:
     return jobs
 
 
-def download_job_log(job_id: int | str, dest: Path) -> bool:
+def download_job_log(job_id, dest: Path) -> bool:
     if dest.exists() and dest.stat().st_size > 0:
         return True
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -166,302 +123,251 @@ def download_job_log(job_id: int | str, dest: Path) -> bool:
         text=True,
     )
     if r.returncode != 0 or not r.stdout:
-        r2 = subprocess.run(
-            ["gh", "api", f"repos/{REPO}/actions/jobs/{job_id}/logs"],
-            capture_output=True,
-            text=True,
-        )
-        if r2.returncode != 0 or not r2.stdout:
-            return False
-        dest.write_text(r2.stdout, errors="replace")
-        return True
+        return False
     dest.write_text(r.stdout, errors="replace")
     return True
 
 
-def suite_from_run_suite_log(text: str) -> Optional[str]:
-    m = SUITE_FROM_RUN_SUITE_RE.search(text)
-    return m.group("suite").strip() if m else None
+def normalize_test_file(path: str) -> str:
+    path = path.replace("\\", "/")
+    for marker in ("/sglang/test/", "test/registered/", "test/manual/", "test/"):
+        idx = path.find(marker)
+        if idx >= 0:
+            if marker.startswith("/sglang/"):
+                return path[idx + len("/sglang/") :]
+            return path[idx:]
+    return path.lstrip("./")
 
 
-def suite_from_job_name(job_name: str) -> str:
-    parts = [p.strip() for p in job_name.split(" / ")]
-    for part in reversed(parts):
-        head = re.sub(r"\s*\(\d+\)\s*$", "", part).strip()
-        m = SUITE_FROM_JOB_RE.search(head)
-        if m:
-            return m.group("suite")
-    head = re.sub(r"\s*\(\d+\)\s*$", "", parts[0] if parts else job_name).strip()
-    return head or "_unknown_suite"
+def estimate_total_mb_from_chunk(text: str) -> Optional[float]:
+    """Best-effort total_mb from a log chunk belonging to one server start."""
+    m = TOTAL_MB_RE.search(text)
+    if m:
+        return float(m.group("mb"))
+
+    kv_gb = None
+    for m in KV_GB_RE.finditer(text):
+        if m.group("kv") is not None:
+            kv_gb = float(m.group("kv"))
+        else:
+            kv_gb = float(m.group("k")) + float(m.group("v"))
+    # Keep the largest KV line (target vs draft → target).
+    # Re-scan for max:
+    kv_vals = []
+    for m in KV_GB_RE.finditer(text):
+        if m.group("kv") is not None:
+            kv_vals.append(float(m.group("kv")))
+        else:
+            kv_vals.append(float(m.group("k")) + float(m.group("v")))
+    if kv_vals:
+        kv_gb = max(kv_vals)
+
+    weight_gb = None
+    # Model load lines vary; optional.
+    mw = re.search(
+        r"Load weight[^\n]*mem usage=(?P<v>[\d.]+)\s*GB", text, re.I
+    ) or re.search(r"mem usage=(?P<v>[\d.]+)\s*GB\.\s*$", text, re.M)
+    # Prefer explicit "Load weight ... mem usage="
+    mw = re.search(r"Load weight.*?mem usage=(?P<v>[\d.]+)\s*GB", text, re.I | re.S)
+    if mw:
+        weight_gb = float(mw.group("v"))
+
+    graph_gb = 0.0
+    gs = list(GRAPH_GB_RE.finditer(text))
+    if gs:
+        graph_gb = max(float(m.group("v")) for m in gs)
+
+    mamba_gb = 0.0
+    mm = MAMBA_GB_RE.search(text)
+    if mm:
+        mamba_gb = float(mm.group("conv")) + float(mm.group("ssm"))
+
+    if kv_gb is None and weight_gb is None:
+        return None
+    total_gb = (weight_gb or 0.0) + (kv_gb or 0.0) + graph_gb + mamba_gb
+    if total_gb <= 0:
+        return None
+    return round(total_gb * 1024.0, 1)
 
 
 def parse_job_log(
-    text: str,
-    *,
-    suite: str,
-    run_id: str,
-    job_id: str,
-    job_name: str = "",
-) -> List[LaunchObservation]:
-    suite = suite_from_run_suite_log(text) or suite
-    # Job display name often has the chip when the suite does not
-    # (e.g. nightly-8-gpu-common on 8-gpu-h200 vs 8-gpu-b200).
-    gpu_family = (
-        gpu_family_from_text(job_name) or gpu_family_from_text(suite) or "unknown"
-    )
-    current_test: Optional[str] = None
-    buffers: Dict[str, List[str]] = defaultdict(list)
-    test_order: List[str] = []
+    text: str, *, job_name: str, run_id: str
+) -> List[Tuple[str, str, float]]:
+    """Return list of (test_file, gpu_family, total_mb)."""
+    suite_m = SUITE_FROM_RUN_SUITE_RE.search(text)
+    suite = suite_m.group("suite") if suite_m else ""
+    gpu = gpu_family_from_text(job_name) or gpu_family_from_text(suite) or "unknown"
+    if gpu == "unknown":
+        return []
 
+    current = None
+    chunks: Dict[str, List[str]] = defaultdict(list)
+    order: List[str] = []
     for line in text.splitlines():
         m = TEST_START_RE.search(line)
         if m:
-            current_test = normalize_test_file(m.group("path"))
-            if current_test not in buffers:
-                test_order.append(current_test)
+            current = normalize_test_file(m.group("path"))
+            if current not in chunks:
+                order.append(current)
             continue
-        if current_test is None:
-            m2 = FILENAME_END_RE.search(line)
-            if m2:
-                current_test = normalize_test_file(m2.group("path"))
-                if current_test not in buffers:
-                    test_order.append(current_test)
-        if current_test is not None:
-            buffers[current_test].append(line)
+        if current:
+            chunks[current].append(line)
 
-    observations: List[LaunchObservation] = []
-    for test_file in test_order:
-        snaps = extract_snapshots_from_log("\n".join(buffers[test_file]))
-        for idx, snap in enumerate(snaps):
-            if not snap:
+    out: List[Tuple[str, str, float]] = []
+    for tf in order:
+        body = "\n".join(chunks[tf])
+        # Split body into server-ish chunks by KV allocation starts for multi-launch.
+        parts = re.split(r"(?=KV Cache is allocated\.)", body)
+        seen = []
+        for part in parts:
+            mb = estimate_total_mb_from_chunk(part)
+            if mb is None:
                 continue
-            observations.append(
-                LaunchObservation(
-                    suite=suite,
-                    test_file=test_file,
-                    run_id=str(run_id),
-                    job_id=str(job_id),
-                    launch_idx=idx,
-                    metrics=snap,
-                    gpu_family=gpu_family,
-                )
-            )
-    return observations
+            # Dedupe near-identical consecutive (TP ranks).
+            if seen and abs(seen[-1] - mb) < 1.0:
+                continue
+            seen.append(mb)
+            out.append((tf, gpu, mb))
+        if not seen:
+            mb = estimate_total_mb_from_chunk(body)
+            if mb is not None:
+                out.append((tf, gpu, mb))
+    return out
 
 
-def collect_from_log_dir(log_dir: Path) -> List[LaunchObservation]:
-    obs: List[LaunchObservation] = []
-    for path in sorted(log_dir.rglob("*.txt")):
-        text = path.read_text(errors="replace")
-        first = text.splitlines()[0] if text else ""
-        job_name = first.split("\t")[0] if "\t" in first else path.stem
-        suite = suite_from_job_name(job_name)
-        obs.extend(
-            parse_job_log(
-                text,
-                suite=suite,
-                run_id="local",
-                job_id=path.stem,
-                job_name=job_name,
-            )
-        )
-    return obs
-
-
-def collect_from_runs(
-    run_ids: Sequence[str],
-    *,
-    cache_dir: Path,
-    max_jobs_per_run: Optional[int] = None,
-    job_name_filter: Optional[str] = None,
-) -> List[LaunchObservation]:
-    obs: List[LaunchObservation] = []
+def collect(run_ids: Sequence[str], cache_dir: Path) -> List[Tuple[str, str, float]]:
+    obs: List[Tuple[str, str, float]] = []
     for run_id in run_ids:
-        print(f"Listing jobs for run {run_id}...", flush=True)
-        jobs = list_jobs(run_id)
-        gpu_jobs = [
-            j
-            for j in jobs
-            if "gpu" in j.get("name", "").lower()
-            or "nightly" in j.get("name", "").lower()
-        ]
-        if job_name_filter:
-            gpu_jobs = [j for j in gpu_jobs if job_name_filter in j.get("name", "")]
-        if max_jobs_per_run is not None:
-            gpu_jobs = gpu_jobs[:max_jobs_per_run]
-        print(f"  {len(gpu_jobs)} jobs to download", flush=True)
-        for j in gpu_jobs:
-            jid = j["id"]
+        print(f"run {run_id}", flush=True)
+        for j in list_jobs(run_id):
             name = j.get("name", "")
-            suite = suite_from_job_name(name)
-            dest = cache_dir / f"run_{run_id}" / f"job_{jid}.txt"
-            print(f"  downloading job {jid} ({name})...", flush=True)
-            if not download_job_log(jid, dest):
-                print(f"    FAILED to download job {jid}", flush=True)
+            if "gpu" not in name.lower() and "nightly" not in name.lower():
+                continue
+            dest = cache_dir / f"run_{run_id}" / f"job_{j['id']}.txt"
+            print(f"  job {j['id']} {name}", flush=True)
+            if not download_job_log(j["id"], dest):
+                print("    download failed", flush=True)
                 continue
             text = dest.read_text(errors="replace")
-            n_before = len(obs)
-            obs.extend(
-                parse_job_log(
-                    text,
-                    suite=suite,
-                    run_id=str(run_id),
-                    job_id=str(jid),
-                    job_name=name,
-                )
-            )
-            print(f"    +{len(obs) - n_before} launch snapshots", flush=True)
+            got = parse_job_log(text, job_name=name, run_id=str(run_id))
+            print(f"    +{len(got)} totals", flush=True)
+            obs.extend(got)
     return obs
 
 
-def resolve_default_run_ids(limit: int) -> List[str]:
-    run_ids: List[str] = []
-    print("Fetching recent scheduled pr-test runs...", flush=True)
-    for r in list_recent_runs(PR_TEST_WORKFLOW, event="schedule", limit=limit):
-        run_ids.append(str(r["id"]))
-        print(f"  pr-test {r['id']} {r.get('created_at')} {r.get('conclusion')}")
-    print("Fetching recent nightly-test-nvidia runs...", flush=True)
-    for r in list_recent_runs(NIGHTLY_WORKFLOW, limit=limit):
-        if r.get("head_branch") and r["head_branch"] != "main":
-            continue
-        run_ids.append(str(r["id"]))
-        print(f"  nightly {r['id']} {r.get('created_at')} {r.get('conclusion')}")
-    return run_ids
+def aggregate(
+    obs: List[Tuple[str, str, float]], factor: float
+) -> Dict[str, Dict[str, List[float]]]:
+    """test_file -> gpu -> list of launch floors (mean*factor per launch idx)."""
+    # Group samples per (file, gpu, launch_idx) by clustering similar totals.
+    by_file_gpu: Dict[Tuple[str, str], List[float]] = defaultdict(list)
+    for tf, gpu, mb in obs:
+        by_file_gpu[(tf, gpu)].append(mb)
+
+    # For multi-launch files we need ordered launches. Cluster chronologically
+    # was lost; use sorted unique-ish buckets by value for multi-modal.
+    # Better: re-parse with order preserved in collect — we already append in order
+    # per job. Across jobs, group by sequential index within each job then average.
+    # Simpler approach: for each (file, gpu), take the list of values in order
+    # from each job as "launches" and average index-wise.
+
+    # Rebuild ordered launches: re-group by consecutive observations in original order.
+    ordered: Dict[Tuple[str, str], List[List[float]]] = defaultdict(list)
+    # Walk original obs and split into runs per (file,gpu) job stretches.
+    current_key = None
+    current_run: List[float] = []
+    for tf, gpu, mb in obs:
+        key = (tf, gpu)
+        if key != current_key:
+            if current_key is not None and current_run:
+                ordered[current_key].append(current_run)
+            current_key = key
+            current_run = [mb]
+        else:
+            current_run.append(mb)
+    if current_key is not None and current_run:
+        ordered[current_key].append(current_run)
+
+    result: Dict[str, Dict[str, List[float]]] = defaultdict(dict)
+    for (tf, gpu), runs in ordered.items():
+        max_len = max(len(r) for r in runs)
+        floors = []
+        for i in range(max_len):
+            vals = [r[i] for r in runs if i < len(r)]
+            floors.append(round(mean_floor(vals, factor=factor), 1))
+        result[tf][gpu] = floors
+    return result
 
 
-def group_by_file_gpu(
-    obs: Sequence[LaunchObservation],
-) -> Dict[Tuple[str, str], Dict[int, Aggregate]]:
-    """(test_file, gpu_family) -> launch_idx -> Aggregate."""
-    grouped: Dict[Tuple[str, str], Dict[int, Aggregate]] = defaultdict(
-        lambda: defaultdict(Aggregate)
-    )
-    for o in obs:
-        if o.gpu_family == "unknown":
-            continue
-        grouped[(o.test_file, o.gpu_family)][o.launch_idx].add(o.metrics)
-    return grouped
-
-
-def floors_for_group(
-    by_idx: Dict[int, Aggregate], *, factor: float
-) -> Tuple[List[Dict[str, float]], List[int]]:
-    launches: List[Dict[str, float]] = []
-    sample_counts: List[int] = []
-    for idx in sorted(by_idx.keys()):
-        agg = by_idx[idx]
-        fl = agg.floor(factor=factor)
-        if not fl:
-            continue
-        launches.append(fl)
-        sample_counts.append(len(agg.samples))
-    return launches, sample_counts
-
-
-def _format_launch_list(launches: List[Dict[str, float]], *, indent: str) -> List[str]:
-    lines = [f"{indent}["]
-    inner = indent + "    "
-    for launch in launches:
-        items = ", ".join(
-            f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
-        )
-        lines.append(f"{inner}{{{items}}},")
-    lines.append(f"{indent}]")
-    return lines
-
-
-def format_floors_block(
-    by_gpu: Dict[str, Tuple[List[Dict[str, float]], List[int]]],
-) -> str:
-    """Format list (single GPU) or dict (multi-GPU) MEMORY_CAPACITY_FLOORS."""
+def format_block(by_gpu: Dict[str, List[float]]) -> str:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     lines = [_BEGIN]
     if len(by_gpu) == 1:
-        gpu, (launches, counts) = next(iter(by_gpu.items()))
-        lines.append(f"# gpu={gpu} samples={counts} updated={today}")
-        lines.append(f"{MODULE_FLOORS_ATTR} = [")
-        for launch in launches:
-            items = ", ".join(
-                f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
-            )
-            lines.append(f"    {{{items}}},")
-        lines.append("]")
+        gpu, floors = next(iter(by_gpu.items()))
+        lines.append(f"# gpu={gpu} updated={today}")
+        if len(floors) == 1:
+            lines.append(f"{MODULE_MIN_ATTR} = {floors[0]}")
+        else:
+            lines.append(f"{MODULE_MIN_ATTR} = {floors}")
     else:
-        meta = ", ".join(f"{g}:samples={by_gpu[g][1]}" for g in sorted(by_gpu.keys()))
-        lines.append(f"# multi-gpu floors; {meta} updated={today}")
-        lines.append(f"{MODULE_FLOORS_ATTR} = {{")
+        lines.append(f"# multi-gpu updated={today}")
+        lines.append(f"{MODULE_MIN_ATTR} = {{")
         for gpu in sorted(by_gpu.keys()):
-            launches, counts = by_gpu[gpu]
-            lines.append(f"    # samples={counts}")
-            lines.append(f'    "{gpu}": [')
-            for launch in launches:
-                items = ", ".join(
-                    f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
-                )
-                lines.append(f"        {{{items}}},")
-            lines.append("    ],")
+            floors = by_gpu[gpu]
+            val = floors[0] if len(floors) == 1 else floors
+            lines.append(f'    "{gpu}": {val},')
         lines.append("}")
     lines.append(_END)
     return "\n".join(lines) + "\n"
 
 
-def _find_injection_index(src: str) -> int:
-    """Insert after the module docstring, imports, and register_*_ci calls."""
+def strip_block(src: str) -> str:
+    for begin, end in (
+        (_BEGIN, _END),
+        (
+            "# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---",
+            "# --- MEMORY_CAPACITY_FLOORS end ---",
+        ),
+    ):
+        if begin in src and end in src:
+            pre, rest = src.split(begin, 1)
+            _, post = rest.split(end, 1)
+            pre, post = pre.rstrip("\n"), post.lstrip("\n")
+            src = (pre + "\n\n" + post) if pre and post else pre + post
+    return src
+
+
+def inject(src: str, by_gpu: Dict[str, List[float]]) -> str:
+    import ast
+
+    src = strip_block(src)
+    block = format_block(by_gpu)
     try:
         tree = ast.parse(src)
     except SyntaxError:
-        return 0
+        return block + "\n" + src
     last_end = 0
     for i, node in enumerate(tree.body):
-        # Module docstring
         if (
             i == 0
             and isinstance(node, ast.Expr)
             and isinstance(getattr(node, "value", None), ast.Constant)
             and isinstance(node.value.value, str)
         ):
-            last_end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            last_end = node.end_lineno or node.lineno
             continue
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            last_end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            last_end = node.end_lineno or node.lineno
             continue
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-            # module-level register_cuda_ci(...) etc.
-            last_end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            last_end = node.end_lineno or node.lineno
             continue
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
-            # Keep going past simple constants that often sit near imports.
-            last_end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            last_end = node.end_lineno or node.lineno
             continue
         break
-    if last_end <= 0:
-        return 0
     lines = src.splitlines(keepends=True)
-    return sum(len(lines[i]) for i in range(min(last_end, len(lines))))
-
-
-def _strip_existing_floors_block(src: str) -> str:
-    """Remove a previous auto-generated MEMORY_CAPACITY_FLOORS block."""
-    if _BEGIN not in src or _END not in src:
-        return src
-    pre, rest = src.split(_BEGIN, 1)
-    _, post = rest.split(_END, 1)
-    # Trim blank lines left at the join so re-injection is clean.
-    pre = pre.rstrip("\n")
-    post = post.lstrip("\n")
-    if pre and post:
-        return pre + "\n\n" + post
-    return pre + post
-
-
-def inject_floors_into_source(
-    src: str,
-    by_gpu: Dict[str, Tuple[List[Dict[str, float]], List[int]]],
-) -> str:
-    block = format_floors_block(by_gpu)
-    # Always strip + re-inject so a previous wrong position is corrected.
-    src = _strip_existing_floors_block(src)
-    idx = _find_injection_index(src)
+    idx = sum(len(lines[i]) for i in range(min(last_end, len(lines))))
     pre, post = src[:idx], src[idx:]
     if pre and not pre.endswith("\n"):
         pre += "\n"
@@ -470,45 +376,10 @@ def inject_floors_into_source(
     return pre + "\n" + block + post
 
 
-def write_floors_to_files(
-    file_floors: Dict[str, Dict[str, Tuple[List[Dict[str, float]], List[int]]]],
-    *,
-    dry_run: bool,
-) -> int:
-    updated = 0
-    for test_file, by_gpu in sorted(file_floors.items()):
-        path = REPO_ROOT / test_file
-        if not path.is_file():
-            print(f"  SKIP missing {test_file}", flush=True)
-            continue
-        old = path.read_text(encoding="utf-8")
-        new = inject_floors_into_source(old, by_gpu)
-        gpus = ",".join(sorted(by_gpu.keys()))
-        n_launch = max(len(v[0]) for v in by_gpu.values())
-        if new == old:
-            print(
-                f"  unchanged {test_file} gpus=[{gpus}] launches={n_launch}",
-                flush=True,
-            )
-            continue
-        print(
-            f"  {'would update' if dry_run else 'update'} {test_file} "
-            f"gpus=[{gpus}] launches={n_launch}",
-            flush=True,
-        )
-        if not dry_run:
-            path.write_text(new, encoding="utf-8")
-        updated += 1
-    return updated
-
-
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    p = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--run-id", action="append", default=[])
     p.add_argument("--limit-runs", type=int, default=3)
-    p.add_argument("--log-dir", type=Path, default=None)
     p.add_argument(
         "--cache-dir",
         type=Path,
@@ -516,58 +387,44 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     p.add_argument("--factor", type=float, default=DEFAULT_FACTOR)
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument("--max-jobs-per-run", type=int, default=None)
-    p.add_argument("--job-name-filter", type=str, default=None)
     args = p.parse_args(argv)
 
-    if args.log_dir:
-        observations = collect_from_log_dir(args.log_dir)
-    else:
-        import shutil
+    import shutil
 
-        if not shutil.which("gh"):
-            print(
-                "Error: the 'gh' (GitHub) CLI is required but was not found in PATH.\n"
-                "Install it and run 'gh auth login' to authenticate.",
-                file=sys.stderr,
-            )
-            return 1
-        run_ids = args.run_id or resolve_default_run_ids(args.limit_runs)
-        if not run_ids:
-            print("No runs found.", file=sys.stderr)
-            return 1
-        observations = collect_from_runs(
-            run_ids,
-            cache_dir=args.cache_dir,
-            max_jobs_per_run=args.max_jobs_per_run,
-            job_name_filter=args.job_name_filter,
-        )
-
-    print(f"Collected {len(observations)} launch observations", flush=True)
-    if not observations:
-        print("Nothing to write.", file=sys.stderr)
+    if not shutil.which("gh"):
+        print("gh CLI required", file=sys.stderr)
         return 1
 
-    grouped = group_by_file_gpu(observations)
-    # test_file -> gpu_family -> (launches, counts)
-    file_floors: Dict[str, Dict[str, Tuple[List[Dict[str, float]], List[int]]]] = (
-        defaultdict(dict)
-    )
-    for (test_file, gpu), by_idx in grouped.items():
-        launches, counts = floors_for_group(by_idx, factor=args.factor)
-        if launches:
-            file_floors[test_file][gpu] = (launches, counts)
-
-    multi = sum(1 for v in file_floors.values() if len(v) > 1)
-    print(
-        f"Floors for {len(file_floors)} test files " f"({multi} multi-GPU)",
-        flush=True,
-    )
-    n = write_floors_to_files(file_floors, dry_run=args.dry_run)
-    print(
-        f"{'Would update' if args.dry_run else 'Updated'} {n} file(s)",
-        flush=True,
-    )
+    run_ids = args.run_id
+    if not run_ids:
+        for r in list_recent_runs(
+            PR_TEST_WORKFLOW, event="schedule", limit=args.limit_runs
+        ):
+            run_ids.append(str(r["id"]))
+        for r in list_recent_runs(NIGHTLY_WORKFLOW, limit=args.limit_runs):
+            if r.get("head_branch") == "main":
+                run_ids.append(str(r["id"]))
+    obs = collect(run_ids, args.cache_dir)
+    print(f"observations={len(obs)}", flush=True)
+    if not obs:
+        return 1
+    agg = aggregate(obs, args.factor)
+    n = 0
+    for tf, by_gpu in sorted(agg.items()):
+        path = REPO_ROOT / tf
+        if not path.is_file():
+            print("skip missing", tf)
+            continue
+        old = path.read_text(encoding="utf-8")
+        new = inject(old, by_gpu)
+        if new == old:
+            print("unchanged", tf, by_gpu.keys())
+            continue
+        print(("would " if args.dry_run else "") + f"update {tf} {dict(by_gpu)}")
+        if not args.dry_run:
+            path.write_text(new, encoding="utf-8")
+        n += 1
+    print(f"updated {n} files")
     return 0
 
 

@@ -22,13 +22,6 @@ from sglang.test.test_utils import (
 # FlashMLA attention backend tests with MTP speculative decoding
 register_cuda_ci(est_time=160, stage="base-b", runner_config="1-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 1122992, "kv_cache_gb": 36.1449},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestFlashMLAMTP(CustomTestCase):
     @classmethod

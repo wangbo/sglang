@@ -8,40 +8,6 @@ from sglang.test.server_fixtures.default_fixture import DefaultServerBase
 
 register_cuda_ci(est_time=350, stage="base-c", runner_config="8-gpu-h200")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3, 3, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 298510,
-        "kv_cache_gb": 22.2057,
-        "swa_size": 238761,
-        "full_size": 298510,
-        "swa_mem_gb": 25.4067,
-    },
-    {
-        "token_capacity": 298510,
-        "kv_cache_gb": 1.0659,
-        "swa_size": 238761,
-        "full_size": 298510,
-        "swa_mem_gb": 0.5742,
-    },
-    {
-        "token_capacity": 298552,
-        "kv_cache_gb": 0.0,
-        "swa_size": 238803,
-        "full_size": 298552,
-        "swa_mem_gb": 25.4133,
-    },
-    {
-        "token_capacity": 298552,
-        "kv_cache_gb": 0.0,
-        "swa_size": 238803,
-        "full_size": 298552,
-        "swa_mem_gb": 0.5742,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestMiMoV2Flash(GSM8KMixin, SpecDecodingMixin, DefaultServerBase):
     gsm8k_accuracy_thres = 0.75

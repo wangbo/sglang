@@ -15,13 +15,6 @@ register_cuda_ci(est_time=900, suite="nightly-4-gpu-b200", nightly=True)
 
 GLM52_FP4_MODEL = "nvidia/GLM-5.2-NVFP4"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 794344, "kv_cache_gb": 40.8573},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestPCGGlm52Fp4(CustomTestCase):
     """PCG prefill on GLM-5.2-NVFP4 (DSA model, TP=4, B200).

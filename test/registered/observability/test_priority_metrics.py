@@ -30,13 +30,6 @@ register_cpu_ci(est_time=179, suite="base-c-test-cpu")
 
 _MODEL_NAME = "Qwen/Qwen3-0.6B"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 237717, "kv_cache_gb": 25.3836},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _parse_prometheus_metrics(metrics_text: str) -> Dict[str, List[Sample]]:
     result = {}

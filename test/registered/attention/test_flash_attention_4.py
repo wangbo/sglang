@@ -15,14 +15,6 @@ from sglang.test.test_utils import (
 # FlashAttention4 integration test (requires SM 100+ / Blackwell B200)
 register_cuda_ci(est_time=260, stage="base-b", runner_config="4-gpu-b200")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 982713, "kv_cache_gb": 134.9766},
-    {"token_capacity": 989503, "kv_cache_gb": 90.5916},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @unittest.skipIf(get_device_sm() < 100, "Test requires CUDA SM 100 or higher")
 class TestFlashAttention4(unittest.TestCase):

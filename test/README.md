@@ -109,45 +109,32 @@ This README mostly describes the NVIDIA GPU CI pipeline. Other hardware backends
 
 ## E2E Memory Capacity Guard
 
-Server-launching e2e tests can pin KV / hybrid pool capacity so regressions
-fail CI. Declare floors on the **test module** (or class):
+Server-launching e2e tests can pin **total memory** (MB) so under-allocation
+regressions fail CI. `/server_info` → `memory_usage.total_mb` is
+`weight + kvcache + graph (+ mamba)` in MB.
+
+Declare on the test module (or class as `min_total_memory_mb`):
 
 ```python
-# Single-hardware suite (any GPU that runs this test):
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 52358, "kv_cache_gb": 6.39},
-]
+MIN_TOTAL_MEMORY_MB = 12000
 
-# Same test on multiple NVIDIA runners (e.g. H200 + B200):
-MEMORY_CAPACITY_FLOORS = {
-    "h200": [{"token_capacity": 11111601, "kv_cache_gb": 11.92}],
-    "b200": [{"token_capacity": 15000000, "kv_cache_gb": 15.0}],
-}
+# Multi-GPU (e.g. H200 + B200):
+MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
 
-class TestFoo(CustomTestCase):
-    # Optional per-class override instead of the module value:
-    # memory_capacity_floors = [...]
-
-    @classmethod
-    def setUpClass(cls):
-        cls.process = popen_launch_server(...)  # checks next floor after health
+# Multi-launch:
+MIN_TOTAL_MEMORY_MB = [12000, 800]
 ```
 
 After `popen_launch_server` (or PD prefill/decode health) succeeds, the harness
-`GET /server_info` and requires observed ≥ the next unused floor for the
-**current GPU family** (`h200` / `b200` / `h100` / `5090` / …). List form applies
-on every GPU; dict form only checks the matching key (no cross-GPU fallback).
-No floors declared / missing GPU key → no check.
+asserts `total_mb >= floor`. No declaration → no check. Missing GPU key → skip.
 
 ```bash
-# Mine scheduled/nightly logs and rewrite MEMORY_CAPACITY_FLOORS in test files
 python3 scripts/ci/utils/update_memory_thresholds.py
 python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
 ```
 
-Disable with `SGLANG_CHECK_MEMORY_THRESHOLDS=0`; force on with `=1`.
-Skipped automatically on AMD CI (`SGLANG_IS_IN_CI_AMD`) because floors come
-from NVIDIA logs.
+Disable: `SGLANG_CHECK_MEMORY_THRESHOLDS=0`. Force: `=1`.
+Skipped on AMD CI (`SGLANG_IS_IN_CI_AMD`).
 
 ## Other Notes
 

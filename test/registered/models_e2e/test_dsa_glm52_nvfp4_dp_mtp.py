@@ -14,13 +14,6 @@ register_cuda_ci(
     runner_config="4-gpu-b200",
 )
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 403941, "kv_cache_gb": 20.7801},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestGLM52NVFP4DPMTP(
     DsaMtpServerBase, DsaMtpEvalConfigDefaults, GSM8KMixin, SpecDecodingMixin

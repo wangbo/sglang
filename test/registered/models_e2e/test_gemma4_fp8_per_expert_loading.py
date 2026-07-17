@@ -27,19 +27,6 @@ from sglang.test.test_utils import (
 # loader path (gated repo + ~27 GB download + 4 GPUs at TP=4).
 register_cuda_ci(est_time=120, stage="base-c", runner_config="4-gpu-h100")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 1033337,
-        "kv_cache_gb": 39.4218,
-        "swa_size": 826669,
-        "full_size": 1033337,
-        "swa_mem_gb": 49.2723,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @unittest.skipIf(get_device_sm() < 90, "Test requires CUDA SM 90 or higher")
 class TestGemma4FP8PerExpertLoading(CustomTestCase):

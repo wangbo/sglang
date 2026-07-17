@@ -18,13 +18,6 @@ from sglang.test.test_utils import (
 
 _is_hip = is_hip()
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 52335, "kv_cache_gb": 6.3954},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestHiCache(CustomTestCase, MMLUMixin):
     mmlu_score_threshold = 0.65

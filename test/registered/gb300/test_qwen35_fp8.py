@@ -36,26 +36,6 @@ DP_MTP_ARGS = [
     "--speculative-num-draft-tokens=2",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=gb300 samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 5699485,
-        "kv_cache_gb": 5.445,
-        "mamba_cache_size": 718,
-        "mamba_conv_gb": 0.5544,
-        "mamba_ssm_gb": 31.6305,
-    },
-    {
-        "token_capacity": 2479783,
-        "kv_cache_gb": 4.7322,
-        "mamba_cache_size": 213,
-        "mamba_conv_gb": 0.6633,
-        "mamba_ssm_gb": 37.7586,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestQwen35Fp8(unittest.TestCase):
     """Qwen3.5-397B FP8 on GB300 (4x GB300 NVL4, tp=4)."""

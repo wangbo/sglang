@@ -31,14 +31,6 @@ register_cuda_ci(est_time=71, stage="base-b", runner_config="1-gpu-small")
 
 _MODEL = os.environ.get("TEST_MODEL_NAME", DEFAULT_SMALL_MODEL_NAME_FOR_TEST)
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 146032, "kv_cache_gb": 4.455},
-    {"token_capacity": 794062, "kv_cache_gb": 24.2352},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 # ---------------------------------------------------------------------------
 # Basic scoring (no MIS delimiter)
 # ---------------------------------------------------------------------------

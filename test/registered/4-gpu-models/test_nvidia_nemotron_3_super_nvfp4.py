@@ -44,26 +44,6 @@ MTP_ARGS = [
     "0.75",
 ]
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 35503128,
-        "kv_cache_gb": 67.716,
-        "mamba_cache_size": 1537,
-        "mamba_conv_gb": 0.8811,
-        "mamba_ssm_gb": 60.093,
-    },
-    {
-        "token_capacity": 36471069,
-        "kv_cache_gb": 8.6922,
-        "mamba_cache_size": 198,
-        "mamba_conv_gb": 0.1188,
-        "mamba_ssm_gb": 7.7715,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _run_gsm8k(test_case):
     args = SimpleNamespace(

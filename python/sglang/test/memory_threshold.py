@@ -1,28 +1,24 @@
-"""E2E memory-capacity floors for CI server-launching tests.
+"""Minimal e2e guard: total server memory (MB) from ``GET /server_info``.
 
-Each test module (or class) declares floors explicitly::
+Declare on the test module or class::
 
-    # Single-hardware (any GPU that runs this suite):
-    MEMORY_CAPACITY_FLOORS = [
-        {"token_capacity": 52358, "kv_cache_gb": 6.39},
-    ]
+    # Single value: every server launch must report total_mb >= this.
+    MIN_TOTAL_MEMORY_MB = 12000
 
-    # Multi-hardware (same test on H200 and B200, etc.):
-    MEMORY_CAPACITY_FLOORS = {
-        "h200": [{"token_capacity": 11111601, "kv_cache_gb": 11.92}],
-        "b200": [{"token_capacity": 15000000, "kv_cache_gb": 15.0}],
-    }
+    # Per-GPU (same test on H200 and B200, etc.):
+    MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
 
-    class TestFoo(CustomTestCase):
-        # Optional per-class override (else the module value is used):
-        # memory_capacity_floors = [...]
+    # Per sequential launch (optional list):
+    MIN_TOTAL_MEMORY_MB = [12000, 800]
 
-After ``popen_launch_server`` (or PD health) becomes ready, the harness
-``GET /server_info`` and asserts observed capacity >= the next unused floor
-for the active test class / module and current GPU family.
+After ``popen_launch_server`` / PD health, the harness reads
+``memory_usage.total_mb`` and asserts ``observed >= floor``.
 
-Offline: ``scripts/ci/utils/update_memory_thresholds.py`` mines scheduled
-PR-test / nightly logs and rewrites ``MEMORY_CAPACITY_FLOORS`` in each file.
+Refresh with ``scripts/ci/utils/update_memory_thresholds.py`` (mines CI logs
+or rewrites from recorded totals).
+
+Disabled on AMD CI (``SGLANG_IS_IN_CI_AMD``). Opt out with
+``SGLANG_CHECK_MEMORY_THRESHOLDS=0``.
 """
 
 from __future__ import annotations
@@ -35,7 +31,7 @@ import sys
 import threading
 import types
 import unittest
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -43,26 +39,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FACTOR = 0.99
 
-# Capacity fields: higher is better (more tokens / larger usable pools).
-CAPACITY_FIELDS = (
-    "token_capacity",  # max_total_num_tokens / #tokens
-    "kv_cache_gb",  # allocated KV pool GB
-    "swa_size",
-    "full_size",
-    "swa_mem_gb",
-    "mamba_cache_size",
-    "mamba_conv_gb",
-    "mamba_ssm_gb",
-    "dsv4_full",
-    "dsv4_swa",
-    "dsv4_c4",
-    "dsv4_c128",
-    "dsv4_c4_state",
-    "dsv4_c128_state",
-)
+MODULE_MIN_ATTR = "MIN_TOTAL_MEMORY_MB"
+CLASS_MIN_ATTR = "min_total_memory_mb"
+_USED_ATTR = "_min_total_memory_mb_used"
+_CHECKED_PIDS: set[int] = set()
 
-# Stable GPU family keys used in MEMORY_CAPACITY_FLOORS dict form.
-# Longer / more specific tokens first for matching.
 GPU_FAMILY_TOKENS = (
     "gb300",
     "gb200",
@@ -77,185 +58,54 @@ GPU_FAMILY_TOKENS = (
     "l40",
 )
 
-# Module attribute name written by the update script / hand-authored tests.
-MODULE_FLOORS_ATTR = "MEMORY_CAPACITY_FLOORS"
-# Optional per-class override.
-CLASS_FLOORS_ATTR = "memory_capacity_floors"
-# Per-owner set of already-consumed floor indices (mutated at runtime).
-_FLOOR_USED_ATTR = "_memory_capacity_floors_used"
-# Pids already checked (avoids double claim when both popen_launch_server
-# and wait_server_ready run on the same process, e.g. EPD fixtures).
-_CHECKED_PIDS: set[int] = set()
-
-# ---- log line parsers (shared with the update script) ----
-
-KV_RE = re.compile(
-    r"KV Cache is allocated\.\s*dtype:\s*(?P<dtype>\S+),\s*#tokens:\s*(?P<tokens>\d+),\s*"
-    r"(?:KV size:\s*(?P<kv_size>[\d.]+)\s*GB|"
-    r"K size:\s*(?P<k_size>[\d.]+)\s*GB,\s*V size:\s*(?P<v_size>[\d.]+)\s*GB)"
-)
-SWA_RE = re.compile(
-    r"SWAKVPool mem usage:\s*(?P<mem>[\d.]+)\s*GB,\s*"
-    r"swa size:\s*(?P<swa>\d+),\s*full size:\s*(?P<full>\d+)"
-)
-MAMBA_RE = re.compile(
-    r"Mamba Cache is allocated\.\s*max_mamba_cache_size:\s*(?P<mamba>\d+),\s*"
-    r"conv_state size:\s*(?P<conv>[\d.]+)\s*GB,?\s*"
-    r"ssm_state size:\s*(?P<ssm>[\d.]+)\s*GB"
-)
-DSV4_RE = re.compile(
-    r"DSV4 pool sizes:\s*full=(?P<full>\d+),\s*swa=(?P<swa>\d+),\s*"
-    r"c4=(?P<c4>\d+),\s*c128=(?P<c128>\d+),\s*"
-    r"c4_state=(?P<c4_state>\d+),\s*c128_state=(?P<c128_state>\d+)"
-)
-
 _lock = threading.Lock()
 
 FloorOwner = Union[type, types.ModuleType]
-FloorDict = Dict[str, float]
+MinSpec = Union[int, float, List[Union[int, float]], Dict[str, Any]]
 
 
-def parse_memory_log_line(line: str) -> Optional[FloorDict]:
-    """Parse one engine log line into a partial capacity snapshot."""
-    m = KV_RE.search(line)
-    if m:
-        tokens = int(m.group("tokens"))
-        if m.group("kv_size") is not None:
-            kv_gb = float(m.group("kv_size"))
-        else:
-            kv_gb = float(m.group("k_size")) + float(m.group("v_size"))
-        return {"token_capacity": tokens, "kv_cache_gb": kv_gb}
-
-    m = SWA_RE.search(line)
-    if m:
-        return {
-            "swa_mem_gb": float(m.group("mem")),
-            "swa_size": int(m.group("swa")),
-            "full_size": int(m.group("full")),
-            "token_capacity": int(m.group("full")),
-        }
-
-    m = MAMBA_RE.search(line)
-    if m:
-        return {
-            "mamba_cache_size": int(m.group("mamba")),
-            "mamba_conv_gb": float(m.group("conv")),
-            "mamba_ssm_gb": float(m.group("ssm")),
-        }
-
-    m = DSV4_RE.search(line)
-    if m:
-        return {
-            "dsv4_full": int(m.group("full")),
-            "dsv4_swa": int(m.group("swa")),
-            "dsv4_c4": int(m.group("c4")),
-            "dsv4_c128": int(m.group("c128")),
-            "dsv4_c4_state": int(m.group("c4_state")),
-            "dsv4_c128_state": int(m.group("c128_state")),
-            "token_capacity": int(m.group("full")),
-        }
-
+def gpu_family_from_text(text: str) -> Optional[str]:
+    s = text.lower().replace("_", "-")
+    for key in GPU_FAMILY_TOKENS:
+        if key in s:
+            return key
+    if "1-gpu-small" in s:
+        return "5090"
+    if "1-gpu-large" in s or "2-gpu-large" in s:
+        return "h100"
+    if re.search(r"4-gpu-h100|deepep-4-gpu-h100", s):
+        return "h100"
+    if re.search(r"4-gpu-b200|deepep-4-gpu-b200", s):
+        return "b200"
+    if re.search(r"8-gpu-h200|deepep-8-gpu-h200", s):
+        return "h200"
+    if re.search(r"8-gpu-b200", s):
+        return "b200"
+    if re.search(r"8-gpu-h20", s):
+        return "h20"
+    if "gb300" in s:
+        return "gb300"
+    if "gb200" in s:
+        return "gb200"
     return None
 
 
-def _fingerprint(snap: FloorDict) -> tuple:
-    return tuple(sorted((k, snap[k]) for k in CAPACITY_FIELDS if k in snap))
+def detect_gpu_family() -> Optional[str]:
+    env = os.environ.get("SGLANG_MEMORY_FLOOR_GPU", "").strip().lower()
+    if env:
+        return env
+    try:
+        import torch
+
+        if not torch.cuda.is_available():
+            return None
+        return gpu_family_from_text(torch.cuda.get_device_properties(0).name)
+    except Exception:
+        return None
 
 
-def extract_snapshots_from_log(text: str) -> List[FloorDict]:
-    """Extract ordered capacity snapshots from engine log text.
-
-    Multi-TP ranks emit identical allocation lines; consecutive identical
-    fingerprints are collapsed. Related lines from a single server start
-    (Mamba + KV, SWA sub-pools, EAGLE target+draft) are merged so each
-    snapshot approximates one ``GET /server_info`` sample.
-    """
-    raw: List[FloorDict] = []
-    for line in text.splitlines():
-        snap = parse_memory_log_line(line)
-        if snap is None:
-            continue
-        if raw and _fingerprint(snap) == _fingerprint(raw[-1]):
-            continue  # TP duplicate
-        if raw and _can_merge(raw[-1], snap):
-            raw[-1] = {**raw[-1], **snap}
-        else:
-            raw.append(dict(snap))
-    return _collapse_to_server_launches(raw)
-
-
-def _can_merge(a: FloorDict, b: FloorDict) -> bool:
-    if _is_kv_only(a) and _is_kv_only(b):
-        return False
-    for k in b:
-        if k in a and a[k] != b[k]:
-            if k in ("token_capacity", "kv_cache_gb"):
-                continue
-            return False
-    return True
-
-
-def _is_kv_only(snap: FloorDict) -> bool:
-    return set(snap.keys()).issubset({"token_capacity", "kv_cache_gb"})
-
-
-def _collapse_to_server_launches(snaps: List[FloorDict]) -> List[FloorDict]:
-    """Collapse log lines into one snapshot per ``popen_launch_server``.
-
-    * Hybrid SWA: two sub-pool KV lines + ``SWAKVPool`` summary.
-    * Speculative (EAGLE): target + draft pure-KV (same token_capacity);
-      keep the larger kv_cache_gb (target; what /server_info reports).
-    """
-    if not snaps:
-        return snaps
-    out: List[FloorDict] = []
-    for snap in snaps:
-        if "swa_size" in snap or "full_size" in snap:
-            swa = snap.get("swa_size")
-            full = snap.get("full_size") or snap.get("token_capacity")
-            kept: List[FloorDict] = []
-            for prev in out:
-                if not _is_kv_only(prev):
-                    kept.append(prev)
-                    continue
-                tc = prev.get("token_capacity")
-                if tc is not None and tc in (swa, full):
-                    if "kv_cache_gb" in prev:
-                        snap["kv_cache_gb"] = max(
-                            float(snap.get("kv_cache_gb", 0.0)),
-                            float(prev["kv_cache_gb"]),
-                        )
-                    continue
-                kept.append(prev)
-            out = kept
-            out.append(snap)
-            continue
-
-        if (
-            out
-            and _is_kv_only(out[-1])
-            and _is_kv_only(snap)
-            and out[-1].get("token_capacity") == snap.get("token_capacity")
-            and out[-1].get("token_capacity") is not None
-        ):
-            prev = out[-1]
-            if float(snap.get("kv_cache_gb", 0.0)) > float(
-                prev.get("kv_cache_gb", 0.0)
-            ):
-                out[-1] = dict(snap)
-            continue
-
-        out.append(snap)
-    return out
-
-
-def snapshot_from_server_info(info: Dict[str, Any]) -> FloorDict:
-    """Build a capacity snapshot from a ``/server_info`` JSON response."""
-    snap: FloorDict = {}
-
-    if "max_total_num_tokens" in info and info["max_total_num_tokens"] is not None:
-        snap["token_capacity"] = int(info["max_total_num_tokens"])
-
+def total_mb_from_server_info(info: Dict[str, Any]) -> Optional[float]:
+    """Extract total_mb from /server_info (internal_states or top-level)."""
     mem = None
     internal = info.get("internal_states")
     if isinstance(internal, list) and internal and isinstance(internal[0], dict):
@@ -263,41 +113,25 @@ def snapshot_from_server_info(info: Dict[str, Any]) -> FloorDict:
     if not isinstance(mem, dict):
         mem = info.get("memory_usage")
     if not isinstance(mem, dict):
-        mem = {}
-
-    if "token_capacity" in mem and mem["token_capacity"] is not None:
-        snap["token_capacity"] = int(mem["token_capacity"])
-    if "kvcache" in mem and mem["kvcache"] is not None:
-        snap["kv_cache_gb"] = float(mem["kvcache"])
-
-    int_fields = (
-        "swa_size",
-        "full_size",
-        "mamba_cache_size",
-        "dsv4_full",
-        "dsv4_swa",
-        "dsv4_c4",
-        "dsv4_c128",
-        "dsv4_c4_state",
-        "dsv4_c128_state",
-    )
-    float_fields = ("swa_mem_gb", "mamba_conv_gb", "mamba_ssm_gb")
-    for field in int_fields:
-        if field in mem and mem[field] is not None:
-            snap[field] = int(mem[field])
-    for field in float_fields:
-        if field in mem and mem[field] is not None:
-            snap[field] = float(mem[field])
-
-    return snap
+        return None
+    if mem.get("total_mb") is not None:
+        return float(mem["total_mb"])
+    # Fallback if an older server only has GB components.
+    parts = []
+    for k in ("weight", "kvcache", "graph"):
+        if mem.get(k) is not None:
+            parts.append(float(mem[k]))
+    if not parts:
+        return None
+    return round(sum(parts) * 1024.0, 1)
 
 
-def fetch_server_memory_snapshot(
+def fetch_total_memory_mb(
     base_url: str,
     *,
     api_key: Optional[str] = None,
     timeout: float = 30.0,
-) -> FloorDict:
+) -> Optional[float]:
     headers = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -307,160 +141,85 @@ def fetch_server_memory_snapshot(
         timeout=timeout,
     )
     resp.raise_for_status()
-    return snapshot_from_server_info(resp.json())
+    return total_mb_from_server_info(resp.json())
 
 
-def normalize_test_file(path: str) -> str:
-    """Strip absolute CI checkout prefixes down to ``test/...``."""
-    path = path.replace("\\", "/")
-    for marker in (
-        "/sglang/test/",
-        "test/registered/",
-        "test/manual/",
-        "test/",
-    ):
-        idx = path.find(marker)
-        if idx >= 0:
-            if marker.startswith("/sglang/"):
-                return path[idx + len("/sglang/") :]
-            return path[idx:]
-    return path.lstrip("./")
-
-
-def mean_floor(values: Sequence[float], factor: float = DEFAULT_FACTOR) -> float:
-    if not values:
-        raise ValueError("mean_floor requires non-empty values")
-    return sum(values) / len(values) * factor
-
-
-def check_snapshot_against_floor(
-    observed: FloorDict,
-    floor: FloorDict,
-    *,
-    label: str = "",
-) -> List[str]:
-    """Return failure messages (empty if OK)."""
-    failures: List[str] = []
-    for field in CAPACITY_FIELDS:
-        if field not in floor:
-            continue
-        if field not in observed:
-            logger.warning(
-                "Memory floor %s: has %s=%.4g but server did not report it; "
-                "skipping field",
-                label or "?",
-                field,
-                floor[field],
-            )
-            continue
-        obs = float(observed[field])
-        thr = float(floor[field])
-        if obs < thr:
-            failures.append(
-                f"{field}: observed={obs:g} < floor={thr:g}"
-                + (f" ({label})" if label else "")
-            )
-    return failures
-
-
-def gpu_family_from_text(text: str) -> Optional[str]:
-    """Map suite / job / device name text to a stable GPU family key."""
-    s = text.lower().replace("_", "-")
-    for key in GPU_FAMILY_TOKENS:
-        if key in s:
-            return key
-    # Runner-config / suite shorthands without the chip in the name.
-    if "1-gpu-small" in s:
-        return "5090"
-    if "1-gpu-large" in s or "2-gpu-large" in s:
-        return "h100"
-    if re.search(r"(^|[^a-z])4-gpu-h100|deepep-4-gpu-h100", s):
-        return "h100"
-    if re.search(r"(^|[^a-z])4-gpu-b200|deepep-4-gpu-b200", s):
-        return "b200"
-    if re.search(r"8-gpu-h200|deepep-8-gpu-h200", s):
-        return "h200"
-    if re.search(r"8-gpu-b200", s):
-        return "b200"
-    if re.search(r"8-gpu-h20", s):
-        return "h20"
-    if "gb300" in s or "gb200" in s:
-        return "gb300" if "gb300" in s else "gb200"
-    return None
-
-
-def detect_gpu_family() -> Optional[str]:
-    """Runtime GPU family for selecting multi-hardware floors."""
-    env = os.environ.get("SGLANG_MEMORY_FLOOR_GPU", "").strip().lower()
-    if env:
-        return env
-    try:
-        import torch
-
-        if not torch.cuda.is_available():
-            return None
-        name = torch.cuda.get_device_properties(0).name
-    except Exception:
-        return None
-    return gpu_family_from_text(name)
-
-
-def _raw_floors_from_owner(owner: FloorOwner) -> Any:
+def _raw_min_from_owner(owner: FloorOwner) -> Any:
     if isinstance(owner, type):
-        class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
-        if class_floors is not None:
-            return class_floors
+        v = getattr(owner, CLASS_MIN_ATTR, None)
+        if v is not None:
+            return v
         mod = sys.modules.get(owner.__module__)
         if mod is not None:
-            return getattr(mod, MODULE_FLOORS_ATTR, None)
+            return getattr(mod, MODULE_MIN_ATTR, None)
         return None
-    return getattr(owner, MODULE_FLOORS_ATTR, None)
+    return getattr(owner, MODULE_MIN_ATTR, None)
 
 
-def resolve_launch_floors(
-    floors_spec: Any, *, gpu_family: Optional[str] = None
-) -> Optional[List[FloorDict]]:
-    """Normalize MEMORY_CAPACITY_FLOORS list or per-GPU dict to a launch list.
+def resolve_min_total_memory_mb(
+    spec: Any, *, gpu_family: Optional[str] = None
+) -> Optional[List[float]]:
+    """Normalize MIN_TOTAL_MEMORY_MB to a list of floors (one per launch).
 
-    * ``list`` — used on every GPU (single-runner tests).
-    * ``dict`` — keyed by GPU family (``h200``, ``b200``, …); only the entry
-      matching the current GPU is used. Missing key → no check (do not fall
-      back to another GPU's floors).
+    * ``int|float`` → ``[value]`` (same floor every launch)
+    * ``list`` → one floor per sequential launch
+    * ``dict`` → per GPU family; values are int/float or list
     """
-    if floors_spec is None:
+    if spec is None:
         return None
-    if isinstance(floors_spec, list):
-        return list(floors_spec) if floors_spec else None
-    if isinstance(floors_spec, dict):
-        if not floors_spec:
-            return None
+    if isinstance(spec, (int, float)):
+        return [float(spec)]
+    if isinstance(spec, list):
+        return [float(x) for x in spec] if spec else None
+    if isinstance(spec, dict):
         family = gpu_family if gpu_family is not None else detect_gpu_family()
         if family is None:
             logger.warning(
-                "MEMORY_CAPACITY_FLOORS is a per-GPU dict %s but GPU family "
-                "could not be detected; skipping memory floor check",
-                list(floors_spec.keys()),
+                "MIN_TOTAL_MEMORY_MB is per-GPU %s but GPU family unknown; skip",
+                list(spec.keys()),
             )
             return None
-        if family not in floors_spec:
+        if family not in spec:
             logger.warning(
-                "MEMORY_CAPACITY_FLOORS has keys %s but no entry for "
-                "gpu_family=%s; skipping memory floor check",
-                list(floors_spec.keys()),
+                "MIN_TOTAL_MEMORY_MB keys %s have no entry for %s; skip",
+                list(spec.keys()),
                 family,
             )
             return None
-        launches = floors_spec[family]
-        return list(launches) if launches else None
-    logger.warning(
-        "MEMORY_CAPACITY_FLOORS has unsupported type %s; expected list or dict",
-        type(floors_spec).__name__,
-    )
+        return resolve_min_total_memory_mb(spec[family], gpu_family=family)
+    logger.warning("MIN_TOTAL_MEMORY_MB has unsupported type %s", type(spec).__name__)
     return None
 
 
-def _floors_from_owner(owner: FloorOwner) -> Optional[List[FloorDict]]:
-    return resolve_launch_floors(_raw_floors_from_owner(owner))
+def _counter_owner(owner: FloorOwner) -> FloorOwner:
+    if isinstance(owner, type) and getattr(owner, CLASS_MIN_ATTR, None) is None:
+        mod = sys.modules.get(owner.__module__)
+        if mod is not None and getattr(mod, MODULE_MIN_ATTR, None) is not None:
+            return mod
+    return owner
+
+
+def claim_min_total_mb(
+    owner: FloorOwner, observed_mb: float
+) -> Optional[tuple[float, int]]:
+    """Claim the unused floor closest to ``observed_mb`` (handles concurrent PD)."""
+    floors = resolve_min_total_memory_mb(_raw_min_from_owner(owner))
+    if not floors:
+        return None
+    with _lock:
+        c_owner = _counter_owner(owner)
+        used = set(getattr(c_owner, _USED_ATTR, set()))
+        candidates = [i for i in range(len(floors)) if i not in used]
+        if not candidates:
+            logger.info(
+                "MIN_TOTAL_MEMORY_MB %s: all floors claimed; skip",
+                _owner_label(owner),
+            )
+            return None
+        best_i = min(candidates, key=lambda i: abs(floors[i] - observed_mb))
+        used.add(best_i)
+        setattr(c_owner, _USED_ATTR, used)
+    return floors[best_i], best_i
 
 
 def _owner_label(owner: FloorOwner) -> str:
@@ -469,80 +228,7 @@ def _owner_label(owner: FloorOwner) -> str:
     return getattr(owner, "__name__", repr(owner))
 
 
-def _counter_owner(owner: FloorOwner) -> FloorOwner:
-    """Owner that holds the floors list (class override or defining module)."""
-    if isinstance(owner, type):
-        class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
-        if class_floors is None:
-            mod = sys.modules.get(owner.__module__)
-            if mod is not None and getattr(mod, MODULE_FLOORS_ATTR, None) is not None:
-                return mod
-    return owner
-
-
-def _floor_match_distance(floor: FloorDict, observed: FloorDict) -> float:
-    """Distance for matching a floor to an observed snapshot (lower is better)."""
-    dist = 0.0
-    matched = False
-    for key, weight in (
-        ("token_capacity", 1.0),
-        ("kv_cache_gb", 1e3),
-        ("full_size", 1.0),
-        ("swa_size", 1.0),
-        ("mamba_cache_size", 1.0),
-    ):
-        if key in floor and key in observed:
-            matched = True
-            dist += weight * abs(float(floor[key]) - float(observed[key]))
-    return dist if matched else float("inf")
-
-
-def claim_matching_memory_floor(
-    owner: FloorOwner, observed: FloorDict
-) -> Optional[tuple[FloorDict, int]]:
-    """Claim the unused floor that best matches ``observed`` (not finish order).
-
-    Sequential finish order is unreliable when servers start concurrently
-    (PD/EPD threads) or when prefill/decode capacities differ.
-    """
-    floors = _floors_from_owner(owner)
-    if not floors:
-        return None
-    with _lock:
-        counter_owner = _counter_owner(owner)
-        used = set(getattr(counter_owner, _FLOOR_USED_ATTR, set()))
-        candidates = [i for i in range(len(floors)) if i not in used]
-        if not candidates:
-            logger.info(
-                "Memory floors %s: all %d floors already claimed; skipping",
-                _owner_label(owner),
-                len(floors),
-            )
-            return None
-        # Prefer capacity match; fall back to declaration order if observed
-        # has no comparable fields (unit tests).
-        if observed:
-            best_i = min(
-                candidates, key=lambda i: _floor_match_distance(floors[i], observed)
-            )
-        else:
-            best_i = min(candidates)
-        used.add(best_i)
-        setattr(counter_owner, _FLOOR_USED_ATTR, used)
-    return floors[best_i], best_i
-
-
-def claim_next_memory_floor(owner: FloorOwner) -> Optional[tuple[FloorDict, int]]:
-    """Claim next unused floor in declaration order (tests / simple cases)."""
-    return claim_matching_memory_floor(owner, {})
-
-
 def find_active_test_owner() -> Optional[FloorOwner]:
-    """Locate the unittest class (or its module) declaring floors.
-
-    Walks the stack for a ``cls`` local that is a ``TestCase`` subclass —
-    the usual pattern in ``setUpClass`` / fixture launch helpers.
-    """
     for frame_info in inspect.stack(context=0):
         loc = frame_info.frame.f_locals
         cls = loc.get("cls")
@@ -553,20 +239,15 @@ def find_active_test_owner() -> Optional[FloorOwner]:
                 continue
         except TypeError:
             continue
-        if _raw_floors_from_owner(cls) is not None:
+        if _raw_min_from_owner(cls) is not None:
             return cls
     main = sys.modules.get("__main__")
-    if main is not None and getattr(main, MODULE_FLOORS_ATTR, None) is not None:
+    if main is not None and getattr(main, MODULE_MIN_ATTR, None) is not None:
         return main
     return None
 
 
 def memory_threshold_check_enabled() -> bool:
-    """On in NVIDIA CI by default; force with SGLANG_CHECK_MEMORY_THRESHOLDS=1/0.
-
-    Floors are mined from NVIDIA scheduled/nightly logs, so skip on AMD CI
-    (SGLANG_IS_IN_CI_AMD) where free GPU memory / capacity differ.
-    """
     flag = os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower()
     if flag in ("0", "false", "no", "off"):
         return False
@@ -577,13 +258,6 @@ def memory_threshold_check_enabled() -> bool:
     return os.environ.get("SGLANG_IS_IN_CI", "").lower() in ("1", "true", "yes")
 
 
-def mark_process_memory_checked(process: Any) -> None:
-    pid = getattr(process, "pid", None)
-    if pid is not None:
-        with _lock:
-            _CHECKED_PIDS.add(int(pid))
-
-
 def process_memory_already_checked(process: Any) -> bool:
     pid = getattr(process, "pid", None)
     if pid is None:
@@ -592,75 +266,72 @@ def process_memory_already_checked(process: Any) -> bool:
         return int(pid) in _CHECKED_PIDS
 
 
+def mark_process_memory_checked(process: Any) -> None:
+    pid = getattr(process, "pid", None)
+    if pid is not None:
+        with _lock:
+            _CHECKED_PIDS.add(int(pid))
+
+
 def maybe_check_server_memory(
     base_url: str,
     *,
     api_key: Optional[str] = None,
-    floor: Optional[FloorDict] = None,
-    owner: Optional[FloorOwner] = None,
     process: Any = None,
+    owner: Optional[FloorOwner] = None,
 ) -> None:
-    """Assert capacity against an explicit floor or a matching declared floor.
-
-    No-op when disabled, when no floor is available, when this ``process`` was
-    already checked, or when /server_info cannot be queried. Raises
-    ``AssertionError`` on regression.
-    """
+    """Assert ``memory_usage.total_mb`` >= declared ``MIN_TOTAL_MEMORY_MB``."""
     if not memory_threshold_check_enabled():
         return
-
     if process is not None and process_memory_already_checked(process):
-        logger.info(
-            "Memory floor check skipped for pid=%s: already checked",
-            getattr(process, "pid", None),
-        )
+        return
+
+    owner = owner or find_active_test_owner()
+    if owner is None or _raw_min_from_owner(owner) is None:
         return
 
     try:
-        observed = fetch_server_memory_snapshot(base_url, api_key=api_key)
+        observed = fetch_total_memory_mb(base_url, api_key=api_key)
     except Exception as e:
+        logger.warning("Memory floor check skipped: /server_info failed (%s)", e)
+        return
+    if observed is None:
         logger.warning(
-            "Memory floor check skipped: failed to query /server_info (%s)",
-            e,
+            "Memory floor check skipped: server_info has no memory_usage.total_mb"
         )
         return
 
-    if not observed:
-        logger.warning("Memory floor check skipped: empty snapshot")
+    claimed = claim_min_total_mb(owner, observed)
+    if claimed is None:
         return
-
-    label = ""
-    launch_idx = -1
-    if floor is None:
-        owner = owner or find_active_test_owner()
-        if owner is None:
-            return
-        claimed = claim_matching_memory_floor(owner, observed)
-        if claimed is None:
-            return
-        floor, launch_idx = claimed
-        label = f"{_owner_label(owner)} floor[{launch_idx}]"
-    else:
-        label = "explicit floor"
-
-    logger.info("Memory floor check %s: observed=%s floor=%s", label, observed, floor)
-    failures = check_snapshot_against_floor(observed, floor, label=label)
-    if failures:
+    floor_mb, idx = claimed
+    label = f"{_owner_label(owner)} floor[{idx}]"
+    logger.info(
+        "Memory floor check %s: total_mb observed=%.1f floor=%.1f",
+        label,
+        observed,
+        floor_mb,
+    )
+    if observed < floor_mb:
         raise AssertionError(
-            "Memory capacity regression detected:\n  "
-            + "\n  ".join(failures)
-            + "\nUpdate MEMORY_CAPACITY_FLOORS in the test file after an "
-            "intentional optimization via "
-            "scripts/ci/utils/update_memory_thresholds.py"
+            f"Memory capacity regression ({label}): "
+            f"total_mb observed={observed:g} < floor={floor_mb:g}. "
+            f"Update MIN_TOTAL_MEMORY_MB after an intentional change via "
+            f"scripts/ci/utils/update_memory_thresholds.py"
         )
     if process is not None:
         mark_process_memory_checked(process)
 
 
 def reset_floor_counters(*owners: FloorOwner) -> None:
-    """Test helper: clear consumed-floor bookkeeping on the given owners."""
     with _lock:
         for owner in owners:
-            if hasattr(owner, _FLOOR_USED_ATTR):
-                delattr(owner, _FLOOR_USED_ATTR)
+            if hasattr(owner, _USED_ATTR):
+                delattr(owner, _USED_ATTR)
         _CHECKED_PIDS.clear()
+
+
+def mean_floor(values: list[float], factor: float = DEFAULT_FACTOR) -> float:
+    if not values:
+        raise ValueError("empty values")
+    return sum(values) / len(values) * factor

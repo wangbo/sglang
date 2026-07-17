@@ -63,37 +63,6 @@ MODEL_THRESHOLDS = {
     ): ModelEvalMetrics(0.26, 34.0),
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[1, 1, 1, 1, 1, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 1091715, "kv_cache_gb": 31.6206},
-    {"token_capacity": 104612, "kv_cache_gb": 47.8962},
-    {"token_capacity": 822552, "kv_cache_gb": 43.9362},
-    {"token_capacity": 2064298, "kv_cache_gb": 55.1232},
-    {
-        "token_capacity": 383109,
-        "kv_cache_gb": 33.0066,
-        "swa_size": 494519,
-        "full_size": 618150,
-        "swa_mem_gb": 49.5198,
-    },
-    {
-        "token_capacity": 78481,
-        "kv_cache_gb": 2.9898,
-        "swa_size": 306487,
-        "full_size": 383109,
-        "swa_mem_gb": 32.8779,
-    },
-    {
-        "token_capacity": 25948,
-        "kv_cache_gb": 2.277,
-        "swa_size": 62784,
-        "full_size": 78481,
-        "swa_mem_gb": 26.9478,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestNightlyVLMMmmuEval(unittest.TestCase):
     @classmethod

@@ -882,7 +882,7 @@ def _maybe_check_server_memory_after_launch(
     api_key: Optional[str] = None,
     process: Optional[subprocess.Popen] = None,
 ) -> None:
-    """Assert class/module MEMORY_CAPACITY_FLOORS via /server_info if declared."""
+    """Assert class/module MIN_TOTAL_MEMORY_MB via /server_info if declared."""
     try:
         from sglang.test.memory_threshold import maybe_check_server_memory
 

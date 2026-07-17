@@ -9,19 +9,6 @@ register_cuda_ci(est_time=500, suite="nightly-4-gpu-b200", nightly=True)
 
 QWEN3_NEXT_MODEL_FP4 = "nvidia/Qwen3-Next-80B-A3B-Instruct-NVFP4"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 14119966,
-        "kv_cache_gb": 80.8038,
-        "mamba_cache_size": 4041,
-        "mamba_conv_gb": 1.6632,
-        "mamba_ssm_gb": 71.0523,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @unittest.skipIf(
     get_device_sm() < 100, "Test requires CUDA SM 100 or higher (Blackwell)"

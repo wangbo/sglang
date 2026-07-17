@@ -20,14 +20,6 @@ from sglang.utils import is_in_ci
 register_cuda_ci(est_time=353, stage="base-b", runner_config="1-gpu-small")
 register_amd_ci(est_time=600, suite="stage-b-test-1-gpu-small-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 97539, "kv_cache_gb": 11.8998},
-    {"token_capacity": 97526, "kv_cache_gb": 11.8998},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestRetractDecode(CustomTestCase):
     """python -m unittest test_retract_decode.TestRetractDecode"""

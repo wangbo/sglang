@@ -12,46 +12,6 @@ register_cuda_ci(est_time=1800, suite="nightly-8-gpu-common", nightly=True)
 GPT_OSS_120B_MXFP4_MODEL_PATH = "openai/gpt-oss-120b"
 GPT_OSS_120B_EAGLE3_DRAFT_MODEL_PATH = "lmsys/EAGLE3-gpt-oss-120b-bf16"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# multi-gpu floors; b200:samples=[1, 1], h200:samples=[1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = {
-    # samples=[1, 1]
-    "b200": [
-        {
-            "token_capacity": 17114423,
-            "kv_cache_gb": 73.4382,
-            "swa_size": 15594416,
-            "full_size": 19493020,
-            "swa_mem_gb": 150.579,
-        },
-        {
-            "token_capacity": 17114423,
-            "kv_cache_gb": 8.1576,
-            "swa_size": 13691525,
-            "full_size": 17114423,
-            "swa_mem_gb": 132.2046,
-        },
-    ],
-    # samples=[1, 1]
-    "h200": [
-        {
-            "token_capacity": 13376204,
-            "kv_cache_gb": 57.4002,
-            "swa_size": 12177162,
-            "full_size": 15221452,
-            "swa_mem_gb": 117.5823,
-        },
-        {
-            "token_capacity": 13376204,
-            "kv_cache_gb": 6.3756,
-            "swa_size": 10700963,
-            "full_size": 13376204,
-            "swa_mem_gb": 103.3263,
-        },
-    ],
-}
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestGptOss120B(unittest.TestCase):
     """Unified test class for GPT-OSS-120B performance and accuracy.

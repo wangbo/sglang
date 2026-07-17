@@ -28,21 +28,6 @@ MODEL_FP8 = "sgl-project/DeepSeek-V4-Flash-FP8"
 SERVER_LAUNCH_TIMEOUT = 3600
 DEEPEP_CONFIG = '{"normal_dispatch":{"num_sms":96},"normal_combine":{"num_sms":96}}'
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 4995809,
-        "dsv4_full": 4995809,
-        "dsv4_swa": 499530,
-        "dsv4_c4": 1248952,
-        "dsv4_c128": 39029,
-        "dsv4_c4_state": 62441,
-        "dsv4_c128_state": 0,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestDSV4FlashFP8H200(
     SpecDecodingMixin,

@@ -12,26 +12,6 @@ register_cuda_ci(est_time=480, stage="extra-b", runner_config="8-gpu-h200")
 
 STEP3P5_FLASH_MODEL_PATH = "stepfun-ai/Step-3.5-Flash"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 3038542,
-        "kv_cache_gb": 38.2536,
-        "swa_size": 2430833,
-        "full_size": 3038542,
-        "swa_mem_gb": 55.638,
-    },
-    {
-        "token_capacity": 3038542,
-        "kv_cache_gb": 0.0,
-        "swa_size": 2430833,
-        "full_size": 3038542,
-        "swa_mem_gb": 1.1583,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestStep3p5FlashChainMTP(GSM8KMixin, DefaultServerBase):
     """Chain-style multi-layer EAGLE speculative decoding on Step-3.5-Flash.

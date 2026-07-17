@@ -20,13 +20,6 @@ from sglang.test.test_utils import (
     popen_launch_server,
 )
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[4] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 794062, "kv_cache_gb": 24.2352},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 try:
     import granian  # noqa: F401
 

@@ -26,30 +26,6 @@ DSV4_FLASH_ENV = {
 }
 DSV4_NIXL_SERVER_LAUNCH_TIMEOUT = 1800
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h200 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 9438612,
-        "dsv4_full": 9438612,
-        "dsv4_swa": 943810,
-        "dsv4_c4": 1179826,
-        "dsv4_c128": 73739,
-        "dsv4_c4_state": 58988,
-        "dsv4_c128_state": 0,
-    },
-    {
-        "token_capacity": 7603875,
-        "dsv4_full": 7603875,
-        "dsv4_swa": 760320,
-        "dsv4_c4": 1900968,
-        "dsv4_c128": 59405,
-        "dsv4_c4_state": 47520,
-        "dsv4_c128_state": 0,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 def _has_nixl():
     try:

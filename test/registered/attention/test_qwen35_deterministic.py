@@ -16,19 +16,6 @@ register_cuda_ci(est_time=360, stage="extra-b", runner_config="4-gpu-h100")
 
 QWEN35 = "Qwen/Qwen3.5-35B-A3B"
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 2476576,
-        "kv_cache_gb": 23.6214,
-        "mamba_cache_size": 1417,
-        "mamba_conv_gb": 0.4851,
-        "mamba_ssm_gb": 20.7801,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestQwen35Fa3Deterministic(TestDeterministicBase):
     @classmethod

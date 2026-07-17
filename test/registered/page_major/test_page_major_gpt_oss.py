@@ -22,19 +22,6 @@ from sglang.test.test_utils import DEFAULT_MODEL_NAME_FOR_TEST_MXFP4_WITH_MOE
 
 register_cuda_ci(est_time=420, stage="extra-a", runner_config="1-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 959038,
-        "kv_cache_gb": 21.9582,
-        "swa_size": 767230,
-        "full_size": 959038,
-        "swa_mem_gb": 39.5109,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestPageMajorGptOss(DefaultServerBase):
     """Page-major KV layout on gpt-oss-20b (hybrid-SWA MoE), Triton backend."""

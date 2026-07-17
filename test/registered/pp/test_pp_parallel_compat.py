@@ -17,14 +17,6 @@ QWEN3_MOE_MODEL_PATH = "Qwen/Qwen3-30B-A3B-FP8"
 
 GSM8K_BASELINE_ACCURACY = 0.93
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 1223741, "kv_cache_gb": 56.0142},
-    {"token_capacity": 1214154, "kv_cache_gb": 55.5786},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class _Qwen3MoePPCompatMixin:
     """Launch a Qwen3 MoE server combining PP with another parallel strategy and

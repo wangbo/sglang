@@ -3855,70 +3855,38 @@ class Scheduler(
         return success
 
     def _build_memory_usage_dict(self) -> Dict[str, Any]:
-        """Capacity / pool sizes for /server_info consumers (CI memory floors)."""
+        """Memory breakdown for /server_info (GB components + total_mb)."""
         kvcache = self.token_to_kv_pool_allocator.get_kvcache()
-        mem: Dict[str, Any] = {
-            "weight": round(self.tp_worker.model_runner.weight_load_mem_usage, 2),
-            "kvcache": round(kvcache.mem_usage, 2),
-            "token_capacity": int(self.max_total_num_tokens),
-            "graph": round(self.tp_worker.model_runner.graph_mem_usage, 2),
-        }
-
-        # SWA hybrid pools (SWAKVPool / UnifiedSWAKVPool expose size + size_swa).
-        size_swa = getattr(kvcache, "size_swa", None)
-        size_full = getattr(kvcache, "size", None)
-        if size_swa is not None:
-            mem["swa_size"] = int(size_swa)
-            mem["swa_mem_gb"] = round(float(kvcache.mem_usage), 2)
-        if size_swa is not None and size_full is not None:
-            mem["full_size"] = int(size_full)
-
-        # memory_pool_config carries full/swa/DSV4 sizes when available.
-        cfg = getattr(self.tp_worker.model_runner, "memory_pool_config", None)
-        if cfg is not None:
-            if getattr(cfg, "full_max_total_num_tokens", None) is not None:
-                mem["full_size"] = int(cfg.full_max_total_num_tokens)
-            if getattr(cfg, "swa_max_total_num_tokens", None) is not None:
-                mem["swa_size"] = int(cfg.swa_max_total_num_tokens)
-            for attr, key in (
-                ("c4_max_total_num_tokens", "dsv4_c4"),
-                ("c128_max_total_num_tokens", "dsv4_c128"),
-                ("c4_state_pool_size", "dsv4_c4_state"),
-                ("c128_state_pool_size", "dsv4_c128_state"),
-            ):
-                val = getattr(cfg, attr, 0) or 0
-                if val:
-                    mem[key] = int(val)
-            if mem.get("full_size") is not None and (
-                mem.get("dsv4_c4") or mem.get("dsv4_c128")
-            ):
-                mem["dsv4_full"] = int(mem["full_size"])
-                if mem.get("swa_size") is not None:
-                    mem["dsv4_swa"] = int(mem["swa_size"])
-
-        # Mamba / hybrid linear state pool.
+        weight_gb = float(self.tp_worker.model_runner.weight_load_mem_usage)
+        kv_gb = float(kvcache.mem_usage)
+        graph_gb = float(self.tp_worker.model_runner.graph_mem_usage)
+        # Include mamba/hybrid state if present (same units as kvcache: GB).
+        mamba_gb = 0.0
         mamba_pool = getattr(self.req_to_token_pool, "mamba_pool", None)
         if mamba_pool is not None:
-            mem["mamba_cache_size"] = int(mamba_pool.size)
             mamba_cache = getattr(mamba_pool, "mamba_cache", None)
             if mamba_cache is not None:
-                conv = getattr(mamba_cache, "conv", None)
-                temporal = getattr(mamba_cache, "temporal", None)
-                if conv is not None or temporal is not None:
-                    from sglang.srt.mem_cache.memory_pool import GB as _GB
-                    from sglang.srt.mem_cache.memory_pool import (
-                        get_tensor_size_bytes,
-                    )
+                from sglang.srt.mem_cache.memory_pool import GB as _GB
+                from sglang.srt.mem_cache.memory_pool import get_tensor_size_bytes
 
-                    if conv is not None:
-                        mem["mamba_conv_gb"] = round(
-                            get_tensor_size_bytes(conv) / _GB, 2
-                        )
-                    if temporal is not None:
-                        mem["mamba_ssm_gb"] = round(
-                            get_tensor_size_bytes(temporal) / _GB, 2
-                        )
+                for part in (
+                    getattr(mamba_cache, "conv", None),
+                    getattr(mamba_cache, "temporal", None),
+                ):
+                    if part is not None:
+                        mamba_gb += get_tensor_size_bytes(part) / _GB
 
+        total_gb = weight_gb + kv_gb + graph_gb + mamba_gb
+        mem: Dict[str, Any] = {
+            "weight": round(weight_gb, 2),
+            "kvcache": round(kv_gb, 2),
+            "graph": round(graph_gb, 2),
+            "token_capacity": int(self.max_total_num_tokens),
+            # Single number for CI memory floors (MB).
+            "total_mb": round(total_gb * 1024.0, 1),
+        }
+        if mamba_gb > 0:
+            mem["mamba"] = round(mamba_gb, 2)
         return mem
 
     def get_internal_state(self, recv_req: GetInternalStateReq):

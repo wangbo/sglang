@@ -14,13 +14,6 @@ from sglang.test.server_fixtures.pcg_spec_fixture import PCGSpecBase
 
 register_cuda_ci(est_time=531, stage="base-b", runner_config="2-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 364288, "kv_cache_gb": 16.6716},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestBCGWithEAGLE3(PCGSpecBase, unittest.TestCase):
     """BCG + EAGLE3 on Qwen3-30B-A3B-Instruct-2507."""

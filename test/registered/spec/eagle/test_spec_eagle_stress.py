@@ -22,17 +22,6 @@ from sglang.test.server_fixtures.spec_eagle_fixture import Eagle3Base, EagleLlam
 
 register_cuda_ci(est_time=780, stage="base-b", runner_config="1-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 389919, "kv_cache_gb": 47.5992},
-    {"token_capacity": 4455, "kv_cache_gb": 0.5346},
-    {"token_capacity": 81399, "kv_cache_gb": 39.7386},
-    {"token_capacity": 4455, "kv_cache_gb": 2.178},
-    {"token_capacity": 81399, "kv_cache_gb": 39.7386},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestEagle3Perf(Eagle3Base, SpecPerfKit):
     """Decode throughput (max_new_tokens=1) on EAGLE3 spec v2."""

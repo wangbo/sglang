@@ -10,19 +10,6 @@ from sglang.test.vlm_utils import TestOpenAIMLLMServerBase
 
 register_cuda_ci(est_time=240, stage="base-b", runner_config="1-gpu-large")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 0,
-        "kv_cache_gb": 0.2376,
-        "swa_size": 4055,
-        "full_size": 0,
-        "swa_mem_gb": 0.2277,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestUnlimitedOCRServer(TestOpenAIMLLMServerBase):
     model = "baidu/Unlimited-OCR"

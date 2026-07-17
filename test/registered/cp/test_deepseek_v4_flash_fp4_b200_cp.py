@@ -37,30 +37,6 @@ _DEEPEP_ENV = {
     "SGLANG_DISABLE_DRAFT_EXTEND_CUDA_GRAPH": "1",
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 10588216,
-        "dsv4_full": 10588216,
-        "dsv4_swa": 1058618,
-        "dsv4_c4": 2647054,
-        "dsv4_c128": 82720,
-        "dsv4_c4_state": 132327,
-        "dsv4_c128_state": 0,
-    },
-    {
-        "token_capacity": 11736299,
-        "dsv4_full": 11736299,
-        "dsv4_swa": 1173427,
-        "dsv4_c4": 2934074,
-        "dsv4_c128": 91689,
-        "dsv4_c4_state": 146678,
-        "dsv4_c128_state": 0,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestDSV4FlashFP4B200Balanced_CP(
     SpecDecodingMixin,

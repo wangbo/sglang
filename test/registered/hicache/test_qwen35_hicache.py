@@ -27,19 +27,6 @@ register_cuda_ci(est_time=540, stage="extra-b", runner_config="4-gpu-h100")
 QWEN35_27B_MODEL = "Qwen/Qwen3.5-27B"
 ACC_THRESHOLDS = {QWEN35_27B_MODEL: {"gsm8k": 0.8}}
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 118800,
-        "kv_cache_gb": 1.8216,
-        "mamba_cache_size": 495,
-        "mamba_conv_gb": 0.3366,
-        "mamba_ssm_gb": 8.7219,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestQwen35WithHiCache(CustomTestCase):
     @classmethod

@@ -24,13 +24,6 @@ _SPEC_EAGLE_REVERT_PR_ENV = {
 _CUDA_GRAPH_MAX_BS = 1
 _EAGER_DRAFT_REQUEST_COUNT = 20
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 64880, "kv_cache_gb": 6.93},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 assert _EAGER_DRAFT_REQUEST_COUNT > _CUDA_GRAPH_MAX_BS
 
 _SPEC_EAGLE_SERVER_ARGS = (

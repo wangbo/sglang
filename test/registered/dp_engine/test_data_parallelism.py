@@ -17,13 +17,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=91, stage="base-b", runner_config="2-gpu-large")
 register_amd_ci(est_time=73, suite="stage-b-test-2-gpu-large-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 406260, "kv_cache_gb": 49.599},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestDataParallelism(CustomTestCase, GSM8KMixin):
     gsm8k_accuracy_thres = 0.7

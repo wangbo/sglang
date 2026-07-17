@@ -7,19 +7,6 @@ from sglang.test.gpt_oss_common import BaseTestGptOss
 
 register_cuda_ci(est_time=345, stage="extra-a", runner_config="1-gpu-small")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=5090 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 283288,
-        "kv_cache_gb": 6.4746,
-        "swa_size": 226630,
-        "full_size": 283288,
-        "swa_mem_gb": 11.6721,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @unittest.skipIf(not torch.cuda.is_available(), "CUDA is not available")
 class TestGptOssSm120(BaseTestGptOss):

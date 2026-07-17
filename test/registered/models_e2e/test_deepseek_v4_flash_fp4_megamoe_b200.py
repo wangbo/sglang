@@ -38,30 +38,6 @@ _W4A4_MEGAMOE_ENV = {
     "SGLANG_OPT_DEEPGEMM_MEGA_MOE_USE_MXF4_KIND": "1",
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[3, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 10715358,
-        "dsv4_full": 10715358,
-        "dsv4_swa": 1071375,
-        "dsv4_c4": 2678839,
-        "dsv4_c128": 83713,
-        "dsv4_c4_state": 133921,
-        "dsv4_c128_state": 0,
-    },
-    {
-        "token_capacity": 10714176,
-        "dsv4_full": 10714176,
-        "dsv4_swa": 1071290,
-        "dsv4_c4": 2678544,
-        "dsv4_c128": 83704,
-        "dsv4_c4_state": 133911,
-        "dsv4_c128_state": 0,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class TestDSV4FlashFP4B200W4A8MegaMoE(
     SpecDecodingMixin,

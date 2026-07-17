@@ -26,17 +26,6 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=420, stage="base-b", runner_config="2-gpu-large")
 register_amd_ci(est_time=500, suite="stage-b-test-2-gpu-large-amd")
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3, 3, 3, 3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 1514992, "kv_cache_gb": 48.7575},
-    {"token_capacity": 1400187, "kv_cache_gb": 40.5603},
-    {"token_capacity": 413216, "kv_cache_gb": 37.8378},
-    {"token_capacity": 1793107, "kv_cache_gb": 51.9453},
-    {"token_capacity": 4455, "kv_cache_gb": 0.1287},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @unittest.skipIf(is_in_amd_ci(), "This test case cannot run on ROCm.")
 class TestDPAttentionDP2TP2(

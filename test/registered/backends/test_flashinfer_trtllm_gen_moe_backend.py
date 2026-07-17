@@ -14,33 +14,6 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=800, suite="nightly-4-gpu-b200", nightly=True)
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[1, 1, 1] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 3914892,
-        "kv_cache_gb": 44.8074,
-        "mamba_cache_size": 4381,
-        "mamba_conv_gb": 1.8018,
-        "mamba_ssm_gb": 38.5209,
-    },
-    {
-        "token_capacity": 10301829,
-        "kv_cache_gb": 117.8892,
-        "mamba_cache_size": 5320,
-        "mamba_conv_gb": 2.1879,
-        "mamba_ssm_gb": 46.7676,
-    },
-    {
-        "token_capacity": 5053131,
-        "kv_cache_gb": 57.8358,
-        "mamba_cache_size": 5654,
-        "mamba_conv_gb": 2.3265,
-        "mamba_ssm_gb": 49.7079,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class FlashinferTrtllmGenMoeBackendFP8Base:
     backend = None

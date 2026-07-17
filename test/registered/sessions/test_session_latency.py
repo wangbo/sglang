@@ -56,19 +56,6 @@ SAMPLING_PARAMS = {
     "ignore_eos": True,
 }
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 959036,
-        "kv_cache_gb": 21.9582,
-        "swa_size": 767226,
-        "full_size": 959036,
-        "swa_mem_gb": 39.5109,
-    },
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 @dataclass
 class TurnResult:

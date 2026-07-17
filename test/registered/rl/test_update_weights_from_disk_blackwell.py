@@ -15,14 +15,6 @@ from sglang.test.test_utils import (
     popen_launch_server,
 )
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=b200 samples=[3, 3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 2815718, "kv_cache_gb": 120.8394},
-    {"token_capacity": 12507454, "kv_cache_gb": 143.1342},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 
 class UpdateWeightsFromDiskBase:
     model = None

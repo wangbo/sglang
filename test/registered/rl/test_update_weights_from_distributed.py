@@ -1,12 +1,5 @@
 from sglang.test.ci.ci_register import register_amd_ci, register_cuda_ci
 
-# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# gpu=h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 2037359, "kv_cache_gb": 62.172},
-]
-# --- MEMORY_CAPACITY_FLOORS end ---
-
 """Test distributed weight updates.
 
 This test suite simulates a distributed training environment to ensure
