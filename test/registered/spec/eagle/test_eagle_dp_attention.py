@@ -27,6 +27,13 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=99, stage="extra-b", runner_config="4-gpu-h100")
 register_amd_ci(est_time=200, suite="stage-c-test-4-gpu-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-h100 samples=[2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 290110, "kv_cache_gb": 26.5518},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestEAGLE3EngineDPAttention(CustomTestCase):
     @classmethod

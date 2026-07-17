@@ -26,6 +26,19 @@ _STEPS_PER_CANDIDATE = 120
 _DECODER_WARMUP_STEPS = 60
 _DRAIN_STEPS = 400
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 4055,
+        "kv_cache_gb": 0.099,
+        "swa_size": 404,
+        "full_size": 4055,
+        "swa_mem_gb": 0.099,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestScriptedSwaChunkedReqEarlyReturn(ScriptedTestCase):
     ENGINE_KWARGS = base_engine_kwargs(

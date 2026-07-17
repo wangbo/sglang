@@ -17,6 +17,14 @@ register_cuda_ci(est_time=450, stage="extra-b", runner_config="8-gpu-h200")
 
 DEEPSEEK_V32_MODEL_PATH = "deepseek-ai/DeepSeek-V3.2"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 585192, "kv_cache_gb": 42.6888},
+    {"token_capacity": 555223, "kv_cache_gb": 40.5009},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDeepseekV32IndexTopkPattern(CustomTestCase):
     @classmethod

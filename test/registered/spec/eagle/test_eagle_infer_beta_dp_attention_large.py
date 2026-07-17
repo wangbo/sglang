@@ -19,6 +19,13 @@ from sglang.test.test_utils import (
 # 16 GPU test (4 TP x 4 DP), runs on 2x 8-GPU B200 nodes
 register_cuda_ci(est_time=600, suite="nightly-8-gpu-b200", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-b200 samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 663569, "kv_cache_gb": 21.7206},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def test_gsm8k(base_url: str, model: str):
     requests.get(base_url + "/flush_cache")

@@ -17,6 +17,13 @@ MODELS = [
     SimpleNamespace(model="zai-org/GLM-4.1V-9B-Thinking", mmmu_accuracy=0.68),
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-4-gpu samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 711909, "kv_cache_gb": 43.461},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestVLMEncoderDP(MMMUMultiModelTestBase):
     # --cuda-graph-max-bs-decode 32 last-wins over the kit's default 64.

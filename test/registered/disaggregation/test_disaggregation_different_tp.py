@@ -19,6 +19,26 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=375, stage="base-c", runner_config="8-gpu-h20")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-8-gpu-h20 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 1175196,
+        "kv_cache_gb": 35.8578,
+        "mamba_cache_size": 671,
+        "mamba_conv_gb": 0.7392,
+        "mamba_ssm_gb": 31.5381,
+    },
+    {
+        "token_capacity": 1654376,
+        "kv_cache_gb": 75.7152,
+        "mamba_cache_size": 3016,
+        "mamba_conv_gb": 0.8316,
+        "mamba_ssm_gb": 35.3628,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDisaggregationMooncakePrefillLargerTP(PDDisaggregationServerBase):
     @classmethod

@@ -14,6 +14,19 @@ from sglang.test.server_fixtures.default_fixture import DefaultServerBase
 
 register_cuda_ci(est_time=600, suite="nightly-8-gpu-common", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 11111601,
+        "kv_cache_gb": 11.9196,
+        "mamba_cache_size": 253,
+        "mamba_conv_gb": 0.0,
+        "mamba_ssm_gb": 3.4749,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestLing26Flash(GSM8KMixin, DefaultServerBase):
     model = "inclusionAI/Ling-2.6-flash"

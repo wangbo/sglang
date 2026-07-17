@@ -28,6 +28,18 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=300, stage="base-c", runner_config="8-gpu-h20")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-8-gpu-h20 samples=[3, 3, 3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 556511, "kv_cache_gb": 67.9338},
+    {"token_capacity": 548320, "kv_cache_gb": 66.9372},
+    {"token_capacity": 556511, "kv_cache_gb": 67.9338},
+    {"token_capacity": 548320, "kv_cache_gb": 66.9372},
+    {"token_capacity": 556469, "kv_cache_gb": 67.9404},
+    {"token_capacity": 547261, "kv_cache_gb": 66.8118},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def _has_nixl():
     try:

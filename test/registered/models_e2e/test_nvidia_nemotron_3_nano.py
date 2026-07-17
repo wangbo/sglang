@@ -18,6 +18,19 @@ NEMOTRON_3_NANO_THINKING_ARGS = [
     "deepseek-r1",
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[4] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 17823337,
+        "kv_cache_gb": 25.5024,
+        "mamba_cache_size": 1002,
+        "mamba_conv_gb": 0.396,
+        "mamba_ssm_gb": 22.5522,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestNvidiaNemotron3Nano30BFP8(LMEvalMixin, DefaultServerBase):
     """Test Nemotron-3-Nano-30B FP8 model with lm-eval GSM8K evaluation."""

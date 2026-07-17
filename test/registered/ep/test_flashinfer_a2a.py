@@ -22,6 +22,26 @@ FLASHINFER_A2A_ENV = {
     "SGLANG_FLASHINFER_NUM_MAX_DISPATCH_TOKENS_PER_RANK": "4096",
 }
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-gb300 samples=[3, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 2339039,
+        "kv_cache_gb": 83.424,
+        "mamba_cache_size": 2169,
+        "mamba_conv_gb": 3.5739,
+        "mamba_ssm_gb": 76.2894,
+    },
+    {
+        "token_capacity": 3875728,
+        "kv_cache_gb": 88.704,
+        "mamba_cache_size": 2169,
+        "mamba_conv_gb": 3.5739,
+        "mamba_ssm_gb": 76.2894,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestFlashinferA2ATrtllmRoutedFP4(CustomTestCase):
     """flashinfer A2A + flashinfer_trtllm_routed with modelopt_fp4 (DeepSeek V3)."""

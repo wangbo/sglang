@@ -35,6 +35,13 @@ LOW_ACCEPT_PROMPT = (
 MAX_UPSHIFT_ATTEMPTS = 4
 MAX_DOWNSHIFT_ATTEMPTS = 6
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 81399, "kv_cache_gb": 39.7386},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestAdaptiveSpeculativeServer(CustomTestCase):
     """Test adaptive speculative decoding with state switching and GSM8K accuracy."""

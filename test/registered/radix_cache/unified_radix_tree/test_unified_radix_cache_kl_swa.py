@@ -16,6 +16,19 @@ register_cuda_ci(est_time=250, stage="base-b", runner_config="2-gpu-large")
 
 SWA_MODEL = "openai/gpt-oss-20b"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 2201957,
+        "kv_cache_gb": 25.2054,
+        "swa_size": 1761565,
+        "full_size": 2201957,
+        "swa_mem_gb": 45.3618,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestUnifiedSWARadixCache(UnifiedRadixTreeTestMixin, CustomTestCase):
     """SWA hybrid + UnifiedRadixCache."""

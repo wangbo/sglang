@@ -17,6 +17,13 @@ register_cuda_ci(est_time=900, stage="base-c", runner_config="4-gpu-h100")
 
 QWEN3_32B_MODEL = "Qwen/Qwen3-32B"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-h100 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 13860, "kv_cache_gb": 0.8514},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def _assert_pp_decode_cached_tokens(result, history_len, output_len, label):
     expected = history_len + output_len

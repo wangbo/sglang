@@ -54,6 +54,17 @@ PROMPTS = [
 
 MEM_FRACTION_STATIC = 0.8
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3, 3, 3, 3, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 355628, "kv_cache_gb": 43.4082},
+    {"token_capacity": 343109, "kv_cache_gb": 41.8836},
+    {"token_capacity": 342401, "kv_cache_gb": 41.7978},
+    {"token_capacity": 356673, "kv_cache_gb": 43.5402},
+    {"token_capacity": 362529, "kv_cache_gb": 44.253},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class OperationType(Enum):
     LOAD = "load"

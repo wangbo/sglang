@@ -38,6 +38,19 @@ NUM_REQUESTS = 180
 CONCURRENCY = 128
 MAX_TOKENS = 256
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 32440,
+        "kv_cache_gb": 2.475,
+        "swa_size": 25951,
+        "full_size": 32440,
+        "swa_mem_gb": 2.7819,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestGemma4SwaTritonOobRegression(CustomTestCase):
     @classmethod

@@ -1,8 +1,7 @@
 """Unit tests for e2e memory-capacity log parsing and floor checks.
 
-Guards regressions in the log/HTTP snapshot parsers that the CI memory
-threshold update script and runtime checker rely on. A wrong regex or
-fingerprint merge would silently drop SWA/Mamba/DSV4 floors.
+Guards regressions in the log/HTTP snapshot parsers and the claim/check
+path that server-launching tests use with MEMORY_CAPACITY_FLOORS.
 """
 
 import unittest
@@ -10,11 +9,12 @@ import unittest
 from sglang.test.ci.ci_register import register_cpu_ci
 from sglang.test.memory_threshold import (
     check_snapshot_against_floor,
+    claim_next_memory_floor,
     extract_snapshots_from_log,
     mean_floor,
     parse_memory_log_line,
+    reset_floor_counters,
     snapshot_from_server_info,
-    threshold_key,
 )
 from sglang.test.test_utils import CustomTestCase
 
@@ -82,13 +82,11 @@ class TestMemoryLogParsers(CustomTestCase):
 [TP1] SWAKVPool mem usage: 39.91 GB, swa size: 774980, full size: 968726
 """
         snaps = extract_snapshots_from_log(text)
-        # One server start → one snapshot (sub-pool KV lines collapsed into SWA).
         self.assertEqual(len(snaps), 1)
         self.assertEqual(snaps[0].get("swa_size"), 774980)
         self.assertEqual(snaps[0].get("full_size"), 968726)
         self.assertEqual(snaps[0].get("token_capacity"), 968726)
         self.assertAlmostEqual(snaps[0].get("swa_mem_gb"), 39.91)
-        # Larger of the two sub-pool KV sizes is kept.
         self.assertAlmostEqual(snaps[0].get("kv_cache_gb"), 22.18)
 
     def test_mamba_plus_kv_merge(self):
@@ -103,11 +101,6 @@ KV Cache is allocated. dtype: torch.bfloat16, #tokens: 12000, K size: 0.07 GB, V
         self.assertAlmostEqual(snaps[0]["kv_cache_gb"], 0.14)
 
     def test_eagle_draft_target_collapsed_to_one_launch(self):
-        """One popen_launch_server: target+draft KV lines → one /server_info floor.
-
-        Draft shares token_capacity with a smaller kv_cache_gb; runtime only
-        reports the target pool, so keep the larger GB.
-        """
         text = """
 KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33767, K size: 4.12 GB, V size: 4.12 GB
 KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33767, K size: 0.07 GB, V size: 0.07 GB
@@ -118,7 +111,6 @@ KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33767, K size: 0.07 GB, V
         self.assertAlmostEqual(snaps[0]["kv_cache_gb"], 8.24)
 
     def test_two_real_eagle_launches_kept_separate(self):
-        """Two server processes: target+draft each → two floors (target only)."""
         text = """
 KV Cache is allocated. dtype: torch.bfloat16, #tokens: 72610, K size: 4.44 GB, V size: 4.44 GB
 KV Cache is allocated. dtype: torch.bfloat16, #tokens: 72610, K size: 0.14 GB, V size: 0.14 GB
@@ -150,7 +142,6 @@ class TestServerInfoSnapshot(CustomTestCase):
             ],
         }
         snap = snapshot_from_server_info(info)
-        # internal_states overrides top-level capacity when present
         self.assertEqual(snap["token_capacity"], 999)
         self.assertAlmostEqual(snap["kv_cache_gb"], 3.5)
         self.assertEqual(snap["swa_size"], 100)
@@ -166,34 +157,39 @@ class TestFloorCheck(CustomTestCase):
         ok = check_snapshot_against_floor(
             {"token_capacity": 1000, "kv_cache_gb": 3.1},
             floor,
-            key="t",
-            launch_idx=0,
+            label="t",
         )
         self.assertEqual(ok, [])
         bad = check_snapshot_against_floor(
             {"token_capacity": 900, "kv_cache_gb": 3.1},
             floor,
-            key="t",
-            launch_idx=0,
+            label="t",
         )
         self.assertEqual(len(bad), 1)
         self.assertIn("token_capacity", bad[0])
 
     def test_missing_observed_field_skipped(self):
-        # Floor has SWA but server only reported token_capacity — do not fail.
         failures = check_snapshot_against_floor(
             {"token_capacity": 1000},
             {"token_capacity": 990, "swa_size": 100},
-            key="t",
-            launch_idx=0,
+            label="t",
         )
         self.assertEqual(failures, [])
 
-    def test_threshold_key(self):
-        self.assertEqual(
-            threshold_key("base-b-test-1-gpu-small", "test/registered/foo.py"),
-            "base-b-test-1-gpu-small::test/registered/foo.py",
-        )
+    def test_claim_next_from_class_floors(self):
+        class _T(CustomTestCase):
+            memory_capacity_floors = [
+                {"token_capacity": 100},
+                {"token_capacity": 200},
+            ]
+
+        reset_floor_counters(_T)
+        a = claim_next_memory_floor(_T)
+        b = claim_next_memory_floor(_T)
+        c = claim_next_memory_floor(_T)
+        self.assertEqual(a, ({"token_capacity": 100}, 0))
+        self.assertEqual(b, ({"token_capacity": 200}, 1))
+        self.assertIsNone(c)
 
 
 if __name__ == "__main__":

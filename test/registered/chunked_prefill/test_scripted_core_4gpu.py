@@ -16,6 +16,13 @@ register_cuda_ci(est_time=900, stage="extra-b", runner_config="4-gpu-h100")
 
 _CHUNK_SIZE = 64
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-h100 samples=[4] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 2489020, "kv_cache_gb": 66.4686},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestScriptedPpChunkSweep(ScriptedTestCase):
     ENGINE_KWARGS = base_engine_kwargs(

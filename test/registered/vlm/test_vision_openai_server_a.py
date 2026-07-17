@@ -21,6 +21,22 @@ from sglang.test.vlm_utils import (
 
 register_cuda_ci(est_time=780, stage="base-b", runner_config="1-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 841287, "kv_cache_gb": 48.1338},
+    {"token_capacity": 394613, "kv_cache_gb": 51.183},
+    {"token_capacity": 632135, "kv_cache_gb": 57.8754},
+    {
+        "token_capacity": 31235,
+        "kv_cache_gb": 2.8512,
+        "mamba_cache_size": 345923,
+        "mamba_conv_gb": 26.3934,
+        "mamba_ssm_gb": 0.0,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestLlavaServer(ImageOpenAITestMixin):
     model = "lmms-lab/llava-onevision-qwen2-0.5b-ov"

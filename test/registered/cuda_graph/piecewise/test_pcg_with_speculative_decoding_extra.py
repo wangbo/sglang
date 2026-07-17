@@ -10,6 +10,19 @@ from sglang.test.server_fixtures.pcg_spec_fixture import PCGSpecBase
 
 register_cuda_ci(est_time=531, suite="nightly-4-gpu", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-4-gpu samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 117910,
+        "kv_cache_gb": 3.6036,
+        "mamba_cache_size": 354,
+        "mamba_conv_gb": 0.2475,
+        "mamba_ssm_gb": 10.4148,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestPCGWithMTP(PCGSpecBase, unittest.TestCase):
     """PCG + MTP (NEXTN) on Qwen3.5-35B-A3B with FP8."""

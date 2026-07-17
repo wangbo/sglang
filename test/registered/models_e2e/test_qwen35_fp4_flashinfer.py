@@ -23,6 +23,19 @@ _is_sm100_cuda13 = (
     and _cuda_major >= 13
 )
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-b200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 7139573,
+        "kv_cache_gb": 51.0642,
+        "mamba_cache_size": 2019,
+        "mamba_conv_gb": 1.5642,
+        "mamba_ssm_gb": 44.4015,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipUnless(_is_sm100_cuda13, "requires SM100+ GPU and CUDA 13+")
 class TestQwen35FP4FlashInfer(CustomTestCase):

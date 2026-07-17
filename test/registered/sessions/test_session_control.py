@@ -27,6 +27,14 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=87, stage="extra-a", runner_config="1-gpu-large")
 register_amd_ci(est_time=87, suite="stage-b-test-1-gpu-large-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 2063971, "kv_cache_gb": 62.9838},
+    {"token_capacity": 627293, "kv_cache_gb": 57.4398},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def remove_prefix(text: str, prefix: str) -> str:
     return text[len(prefix) :] if text.startswith(prefix) else text

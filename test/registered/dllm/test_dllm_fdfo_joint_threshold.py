@@ -21,6 +21,13 @@ PROMPTS = [
     "Q: What is 12 times 13? A:",
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1045218, "kv_cache_gb": 39.8772},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestBatchingFDFOJointThreshold(CustomTestCase):
     """At a single in-flight request, FDFO and synchronous execution run identical

@@ -21,6 +21,16 @@ from sglang.test.server_fixtures.spec_eagle_fixture import Eagle3Base, EagleLlam
 
 register_cuda_ci(est_time=1180, stage="base-b", runner_config="1-gpu-small")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[3, 3, 3, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 71674, "kv_cache_gb": 8.7516},
+    {"token_capacity": 52807, "kv_cache_gb": 8.3622},
+    {"token_capacity": 21140, "kv_cache_gb": 6.4152},
+    {"token_capacity": 32047, "kv_cache_gb": 3.9204},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestEagle3Topk16(Eagle3Base, SpecCorrectnessKit, SpecAccuracyKit, SpecLogprobKit):
     """EAGLE3 topk=16 tree (spec v1): correctness + gsm8k + logprob losslessness."""

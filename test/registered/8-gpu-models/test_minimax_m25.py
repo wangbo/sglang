@@ -11,6 +11,14 @@ register_cuda_ci(est_time=1800, suite="nightly-8-gpu-common", nightly=True)
 
 MINIMAX_M25_MODEL_PATH = "MiniMaxAI/MiniMax-M2.5"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[2, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 3564753, "kv_cache_gb": 105.3855},
+    {"token_capacity": 432049, "kv_cache_gb": 102.1878},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestMiniMaxM25(unittest.TestCase):
     """Unified test class for MiniMax-M2.5 performance and accuracy.

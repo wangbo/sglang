@@ -45,6 +45,40 @@ MTP_ARGS = [
 # Accuracy threshold
 GSM8K_BASELINE = 0.935
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[2, 2, 1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 14420878,
+        "kv_cache_gb": 55.0143,
+        "mamba_cache_size": 2497,
+        "mamba_conv_gb": 0.7128,
+        "mamba_ssm_gb": 48.8021,
+    },
+    {
+        "token_capacity": 9148823,
+        "kv_cache_gb": 4.3659,
+        "mamba_cache_size": 506,
+        "mamba_conv_gb": 0.1485,
+        "mamba_ssm_gb": 9.9198,
+    },
+    {
+        "token_capacity": 37996596,
+        "kv_cache_gb": 72.468,
+        "mamba_cache_size": 3290,
+        "mamba_conv_gb": 0.9405,
+        "mamba_ssm_gb": 64.2906,
+    },
+    {
+        "token_capacity": 36249483,
+        "kv_cache_gb": 8.6328,
+        "mamba_cache_size": 506,
+        "mamba_conv_gb": 0.1485,
+        "mamba_ssm_gb": 9.9198,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestNvidiaNemotron3SuperNightly(unittest.TestCase):
     """Unified nightly test class for Nemotron 3 Super 120B.

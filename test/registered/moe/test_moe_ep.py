@@ -16,6 +16,13 @@ from sglang.test.test_utils import (
 # DeepGEMM/FP8 variant moved to test_moe_ep_nightly.py.
 register_cuda_ci(est_time=279, stage="base-b", runner_config="2-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1587705, "kv_cache_gb": 51.1038},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestEp(CustomTestCase):
     @classmethod

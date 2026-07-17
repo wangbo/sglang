@@ -13,6 +13,14 @@ register_cuda_ci(est_time=3600, suite="nightly-perf-text-2-gpu", nightly=True)
 
 PROFILE_DIR = "performance_profiles_text_models"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-perf-text-2-gpu samples=[1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 406260, "kv_cache_gb": 49.599},
+    {"token_capacity": 396983, "kv_cache_gb": 10.593},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestNightlyTextModelsPerformance(unittest.TestCase):
     @classmethod

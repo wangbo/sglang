@@ -32,6 +32,13 @@ _PROFILE_NO_GRAPH_OUTPUT_LEN = 3
 # start_profile blocks until num_steps server steps complete, so it must be <= actual decode steps.
 _PROFILE_NO_GRAPH_STEPS = 3
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 92926, "kv_cache_gb": 8.514},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def _make_server_args(
     *, canary_on: bool, disable_cuda_graph: bool = False

@@ -19,6 +19,19 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=300, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=450, suite="stage-b-test-1-gpu-large-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 63,
+        "kv_cache_gb": 1.7424,
+        "swa_size": 25951,
+        "full_size": 32440,
+        "swa_mem_gb": 2.6037,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def get_server_info(base_url: str) -> dict:
     response = requests.get(base_url + "/server_info", timeout=10)

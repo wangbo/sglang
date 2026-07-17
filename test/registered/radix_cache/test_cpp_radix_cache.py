@@ -15,6 +15,13 @@ from sglang.test.test_utils import (
 # Note: AMD registration removed - test_cpp_radix_cache fails on AMD due to C++ radix tree issues
 register_cuda_ci(est_time=60, suite="nightly-1-gpu", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-1-gpu samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 406260, "kv_cache_gb": 49.599},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestCppRadixCache(CustomTestCase, MMLUMixin):
     mmlu_score_threshold = 0.65

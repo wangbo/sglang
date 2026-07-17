@@ -33,6 +33,14 @@ register_amd_ci(est_time=130, suite="stage-b-test-1-gpu-small-amd")
 
 SERVER_ENV = {"SGLANG_USE_PICKLE_IPC": "0"}
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[4, 4] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 620323, "kv_cache_gb": 18.9288},
+    {"token_capacity": 794062, "kv_cache_gb": 24.2352},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestSRTEndpoint(CustomTestCase):
     @classmethod

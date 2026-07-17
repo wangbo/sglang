@@ -26,6 +26,15 @@ MTP_ARGS = [
     "--speculative-num-draft-tokens=4",
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[2, 2, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 724553, "kv_cache_gb": 43.4115},
+    {"token_capacity": 532287, "kv_cache_gb": 30.6702},
+    {"token_capacity": 474186, "kv_cache_gb": 26.8834},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestGlm52Fp8(unittest.TestCase):
     """GLM-5.2 FP8 on H200/B200 (8-GPU, tp=8)."""

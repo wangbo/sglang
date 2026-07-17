@@ -16,6 +16,14 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=616, stage="extra-b", runner_config="deepep-8-gpu-h200")
 DEEPSEEK_V32_MODEL_PATH = "deepseek-ai/DeepSeek-V3.2"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-deepep-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 231517, "kv_cache_gb": 16.8894},
+    {"token_capacity": 310907, "kv_cache_gb": 22.6809},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDeepseekV32CPInSeqSplit(CustomTestCase):
     @classmethod

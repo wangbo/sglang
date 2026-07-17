@@ -29,6 +29,14 @@ _KITS = (
     MatchedStopMixin,
 )
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[4, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 72657, "kv_cache_gb": 8.8704},
+    {"token_capacity": 72658, "kv_cache_gb": 8.8704},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class _Core(Eagle3Base):
     env_overrides = ((envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY, 1),)

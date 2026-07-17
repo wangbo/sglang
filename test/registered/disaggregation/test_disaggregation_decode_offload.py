@@ -23,6 +23,16 @@ register_cuda_ci(
     runner_config="2-gpu-large",
 )
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3, 3, 3, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 426217, "kv_cache_gb": 52.0344},
+    {"token_capacity": 418149, "kv_cache_gb": 51.0444},
+    {"token_capacity": 426217, "kv_cache_gb": 52.0344},
+    {"token_capacity": 422183, "kv_cache_gb": 51.5394},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDisaggregationDecodeOffload(PDDisaggregationServerBase):
     """

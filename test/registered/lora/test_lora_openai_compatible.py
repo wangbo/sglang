@@ -30,6 +30,15 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=150, suite="nightly-1-gpu", nightly=True)
 register_amd_ci(est_time=150, suite="nightly-amd-1-gpu", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-1-gpu samples=[1, 1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 2035934, "kv_cache_gb": 62.1324},
+    {"token_capacity": 2026883, "kv_cache_gb": 61.8552},
+    {"token_capacity": 2027517, "kv_cache_gb": 61.875},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def get_real_lora_adapter() -> str:
     """Use a real LoRA adapter from Hugging Face."""

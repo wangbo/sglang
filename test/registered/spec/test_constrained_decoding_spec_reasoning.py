@@ -15,6 +15,19 @@ from sglang.test.test_utils import (
 # Constrained decoding with EAGLE3 speculative reasoning (tp=2)
 register_cuda_ci(est_time=137, stage="base-b", runner_config="2-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 682638,
+        "kv_cache_gb": 9.3654,
+        "swa_size": 546110,
+        "full_size": 682638,
+        "swa_mem_gb": 21.0969,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class ServerWithGrammar(CustomTestCase):
     json_schema = json.dumps(

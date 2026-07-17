@@ -27,6 +27,26 @@ MAMBA_CHUNK_SIZE = 64
 MAMBA_TRACK_INTERVAL = 128
 MAMBA_CHUNKED_PREFILL_SIZE = 2048
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-h100 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 3253635,
+        "kv_cache_gb": 37.2438,
+        "mamba_cache_size": 495,
+        "mamba_conv_gb": 0.2079,
+        "mamba_ssm_gb": 8.7219,
+    },
+    {
+        "token_capacity": 2122218,
+        "kv_cache_gb": 24.2946,
+        "mamba_cache_size": 1214,
+        "mamba_conv_gb": 0.5049,
+        "mamba_ssm_gb": 21.3741,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestUnifiedMambaRadixCache(UnifiedRadixTreeTestMixin, CustomTestCase):
     """Mamba hybrid + UnifiedRadixCache."""

@@ -31,6 +31,48 @@ _DEEPEP_ENV = {
     "SGLANG_DEEPEP_NUM_MAX_DISPATCH_TOKENS_PER_RANK": "1024",
 }
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-deepep-4-gpu-b200 samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 13872967,
+        "dsv4_full": 13872967,
+        "dsv4_swa": 1387077,
+        "dsv4_c4": 3468241,
+        "dsv4_c128": 108382,
+        "dsv4_c4_state": 173384,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 10708008,
+        "dsv4_full": 10708008,
+        "dsv4_swa": 1070784,
+        "dsv4_c4": 2677002,
+        "dsv4_c128": 83656,
+        "dsv4_c4_state": 133848,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 13461381,
+        "dsv4_full": 13461381,
+        "dsv4_swa": 1346019,
+        "dsv4_c4": 3365345,
+        "dsv4_c128": 105167,
+        "dsv4_c4_state": 84126,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 13248069,
+        "dsv4_full": 13248069,
+        "dsv4_swa": 1324730,
+        "dsv4_c4": 3312017,
+        "dsv4_c128": 103500,
+        "dsv4_c4_state": 82795,
+        "dsv4_c128_state": 0,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDSV4FlashFP4B200(
     SpecDecodingMixin,

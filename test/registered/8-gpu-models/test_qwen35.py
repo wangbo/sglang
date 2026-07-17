@@ -11,6 +11,33 @@ register_cuda_ci(est_time=1800, suite="nightly-8-gpu-common", nightly=True)
 
 QWEN35_MODEL_PATH = "Qwen/Qwen3.5-397B-A17B-FP8"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[2, 2, 2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 2862140,
+        "kv_cache_gb": 40.9464,
+        "mamba_cache_size": 1646,
+        "mamba_conv_gb": 0.6386,
+        "mamba_ssm_gb": 36.2093,
+    },
+    {
+        "token_capacity": 1288656,
+        "kv_cache_gb": 36.8676,
+        "mamba_cache_size": 184,
+        "mamba_conv_gb": 0.5692,
+        "mamba_ssm_gb": 32.6304,
+    },
+    {
+        "token_capacity": 1571531,
+        "kv_cache_gb": 2.9997,
+        "mamba_cache_size": 97,
+        "mamba_conv_gb": 0.3069,
+        "mamba_ssm_gb": 17.32,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestQwen35(unittest.TestCase):
     """Unified test class for Qwen3.5-397B-A17B performance and accuracy.

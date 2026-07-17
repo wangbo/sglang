@@ -19,6 +19,13 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=42, stage="base-b", runner_config="1-gpu-small")
 register_amd_ci(est_time=38, suite="stage-b-test-1-gpu-small-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 796059, "kv_cache_gb": 24.2946},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestInputEmbeds(CustomTestCase):
     @classmethod

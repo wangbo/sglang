@@ -880,7 +880,7 @@ def _wait_for_server_health(
 def _maybe_check_server_memory_after_launch(
     base_url: str, api_key: Optional[str] = None
 ) -> None:
-    """Assert KV/pool capacity floors via /server_info (CI memory regression guard)."""
+    """Assert class/module MEMORY_CAPACITY_FLOORS via /server_info if declared."""
     try:
         from sglang.test.memory_threshold import maybe_check_server_memory
 
@@ -897,7 +897,7 @@ def _check_memory_or_kill(
     base_url: str,
     api_key: Optional[str] = None,
 ) -> None:
-    """Run memory floor check; kill the server process if it fails."""
+    """Run memory floor check if the test declared floors; kill process on fail."""
     try:
         _maybe_check_server_memory_after_launch(base_url, api_key=api_key)
     except AssertionError:

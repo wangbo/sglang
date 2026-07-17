@@ -10,6 +10,26 @@ register_cuda_ci(est_time=290, stage="base-c", runner_config="4-gpu-h100")
 
 QWEN3_NEXT_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-h100 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 1064013,
+        "kv_cache_gb": 1.0098,
+        "mamba_cache_size": 233,
+        "mamba_conv_gb": 0.099,
+        "mamba_ssm_gb": 4.1283,
+    },
+    {
+        "token_capacity": 1188515,
+        "kv_cache_gb": 1.1286,
+        "mamba_cache_size": 336,
+        "mamba_conv_gb": 0.1386,
+        "mamba_ssm_gb": 5.9301,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestQwen3NextMTPTopk(
     GSM8KMixin, KLDivergenceMixin, PrefixCacheBranchingMixin, DefaultServerBase

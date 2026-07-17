@@ -31,6 +31,13 @@ INDEX_TOPK_FREQ = 2
 
 logger = logging.getLogger(__name__)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-8-gpu-h200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 32440, "kv_cache_gb": 2.3661},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestReturnIndexerTopk(CustomTestCase):
     """Indexer-topk capture e2e test for DSv3.2 (DSA).

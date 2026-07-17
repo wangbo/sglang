@@ -17,6 +17,16 @@ register_cuda_ci(est_time=430, stage="extra-b", runner_config="4-gpu-b200")
 MODEL_PATH = "Qwen/Qwen3-4B-Instruct-2507-FP8"
 MXFP8_MODEL_PATH = "zianglih/Qwen3-4B-Instruct-2507-MXFP8"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-b200 samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1060266, "kv_cache_gb": 145.6092},
+    {"token_capacity": 1061913, "kv_cache_gb": 145.8468},
+    {"token_capacity": 1060392, "kv_cache_gb": 145.629},
+    {"token_capacity": 1060266, "kv_cache_gb": 145.6092},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class FP8BlockwiseGemmBase:
     backend = None

@@ -15,6 +15,15 @@ MISTRAL_LARGE3_FP8_MODEL_PATH = "mistralai/Mistral-Large-3-675B-Instruct-2512"
 MISTRAL_LARGE3_NVFP4_MODEL_PATH = "mistralai/Mistral-Large-3-675B-Instruct-2512-NVFP4"
 MISTRAL_LARGE3_EAGLE_MODEL_PATH = "mistralai/Mistral-Large-3-675B-Instruct-2512-Eagle"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-8-gpu-common samples=[1, 1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 430848, "kv_cache_gb": 28.2051},
+    {"token_capacity": 395746, "kv_cache_gb": 25.9083},
+    {"token_capacity": 922268, "kv_cache_gb": 60.3603},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(not is_blackwell_system(), "Requires B200")
 class TestMistralLarge3(unittest.TestCase):

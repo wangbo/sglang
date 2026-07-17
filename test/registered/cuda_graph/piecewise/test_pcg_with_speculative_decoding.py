@@ -13,6 +13,13 @@ from sglang.test.server_fixtures.pcg_spec_fixture import PCGSpecBase
 
 register_cuda_ci(est_time=531, suite="nightly-4-gpu", nightly=True)
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-4-gpu samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 363380, "kv_cache_gb": 16.632},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestPCGWithEAGLE3(PCGSpecBase, unittest.TestCase):
     """PCG + EAGLE3 on Qwen3-30B-A3B-Instruct-2507."""

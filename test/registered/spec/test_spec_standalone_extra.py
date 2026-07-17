@@ -15,6 +15,13 @@ register_amd_ci(est_time=103, suite="extra-a-test-1-gpu-large-amd")
 
 _AMD_SKIP_BACKEND = "fa3 / flashinfer attention backends are CUDA-only (not in the ROCm sgl_kernel build)"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 203048, "kv_cache_gb": 24.7896},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(is_hip(), _AMD_SKIP_BACKEND)
 class TestStandaloneSpeculativeDecodingBase(StandaloneServerBase, CustomTestCase):

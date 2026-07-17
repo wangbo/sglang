@@ -21,6 +21,13 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=140, stage="extra-a", runner_config="1-gpu-small")
 register_amd_ci(est_time=150, suite="stage-b-test-1-gpu-small-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-small samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 95792, "kv_cache_gb": 11.7018},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestTorchNativeAttnBackend(CustomTestCase):
     def test_mmlu(self):

@@ -38,6 +38,16 @@ logger = logging.getLogger(__name__)
 _QWEN3_30B_A3B_NUM_LAYERS = 48
 _QWEN3_30B_A3B_TOPK = 8
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-deepep-4-gpu-h100 samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 791771, "kv_cache_gb": 36.2538},
+    {"token_capacity": 1137742, "kv_cache_gb": 52.074},
+    {"token_capacity": 1075828, "kv_cache_gb": 49.2426},
+    {"token_capacity": 771723, "kv_cache_gb": 35.3232},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestReturnRoutedExperts(CustomTestCase):
     """End-to-end check that --enable-return-routed-experts stays correct

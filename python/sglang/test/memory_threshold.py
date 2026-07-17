@@ -1,37 +1,44 @@
-"""E2E memory-capacity thresholds for CI unittests.
+"""E2E memory-capacity floors for CI server-launching tests.
 
-Runtime path (preferred): after a server is healthy, ``GET /server_info`` and
-compare capacity fields against floors in ``memory_thresholds.json``.
+Each test module (or class) declares floors explicitly::
 
-Offline path: ``scripts/ci/utils/update_memory_thresholds.py`` mines scheduled
-PR-test / nightly logs (KV / SWA / Mamba / DSV4 allocation lines), averages
-recent values, and writes floors at ``mean * 0.99``.
+    # Floors for each sequential server launch (mean of recent CI * 0.99).
+    # Update with: python3 scripts/ci/utils/update_memory_thresholds.py
+    MEMORY_CAPACITY_FLOORS = [
+        {"token_capacity": 52358, "kv_cache_gb": 6.39},
+    ]
 
-Threshold key: ``{suite}::{test_file}`` where ``suite`` comes from
-``SGLANG_TEST_SUITE`` (set by ``run_unittest_files``) and ``test_file`` is the
-repo-relative path of the running test module.
+    class TestFoo(CustomTestCase):
+        # Optional per-class override (else the module list is used):
+        # memory_capacity_floors = [...]
+
+After ``popen_launch_server`` (or PD health) becomes ready, the harness
+``GET /server_info`` and asserts observed capacity >= the next unused floor
+for the active test class / module.
+
+Offline: ``scripts/ci/utils/update_memory_thresholds.py`` mines scheduled
+PR-test / nightly logs and rewrites ``MEMORY_CAPACITY_FLOORS`` in each file.
 """
 
 from __future__ import annotations
 
-import json
+import inspect
 import logging
 import os
 import re
 import sys
 import threading
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+import types
+import unittest
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import requests
 
 logger = logging.getLogger(__name__)
 
-THRESHOLDS_FILENAME = "memory_thresholds.json"
 DEFAULT_FACTOR = 0.99
 
 # Capacity fields: higher is better (more tokens / larger usable pools).
-# Observed value must be >= floor.
 CAPACITY_FIELDS = (
     "token_capacity",  # max_total_num_tokens / #tokens
     "kv_cache_gb",  # allocated KV pool GB
@@ -48,6 +55,13 @@ CAPACITY_FIELDS = (
     "dsv4_c4_state",
     "dsv4_c128_state",
 )
+
+# Module attribute name written by the update script / hand-authored tests.
+MODULE_FLOORS_ATTR = "MEMORY_CAPACITY_FLOORS"
+# Optional per-class override.
+CLASS_FLOORS_ATTR = "memory_capacity_floors"
+# Per-owner launch counter attribute (mutated at runtime).
+_FLOOR_IDX_ATTR = "_memory_capacity_floor_idx"
 
 # ---- log line parsers (shared with the update script) ----
 
@@ -72,35 +86,12 @@ DSV4_RE = re.compile(
 )
 
 _lock = threading.Lock()
-_launch_counters: Dict[str, int] = {}
-_thresholds_cache: Optional[Dict[str, Any]] = None
+
+FloorOwner = Union[type, types.ModuleType]
+FloorDict = Dict[str, float]
 
 
-def thresholds_path() -> Path:
-    return Path(__file__).resolve().parent / THRESHOLDS_FILENAME
-
-
-def load_thresholds() -> Dict[str, Any]:
-    global _thresholds_cache
-    if _thresholds_cache is not None:
-        return _thresholds_cache
-    path = thresholds_path()
-    if not path.is_file():
-        _thresholds_cache = {}
-        return _thresholds_cache
-    with path.open() as f:
-        _thresholds_cache = json.load(f)
-    return _thresholds_cache
-
-
-def reload_thresholds() -> Dict[str, Any]:
-    """Force-reload thresholds (used by the update script / tests)."""
-    global _thresholds_cache
-    _thresholds_cache = None
-    return load_thresholds()
-
-
-def parse_memory_log_line(line: str) -> Optional[Dict[str, float]]:
+def parse_memory_log_line(line: str) -> Optional[FloorDict]:
     """Parse one engine log line into a partial capacity snapshot."""
     m = KV_RE.search(line)
     if m:
@@ -117,7 +108,6 @@ def parse_memory_log_line(line: str) -> Optional[Dict[str, float]]:
             "swa_mem_gb": float(m.group("mem")),
             "swa_size": int(m.group("swa")),
             "full_size": int(m.group("full")),
-            # Prefer full pool as the primary capacity for SWA hybrids.
             "token_capacity": int(m.group("full")),
         }
 
@@ -144,27 +134,25 @@ def parse_memory_log_line(line: str) -> Optional[Dict[str, float]]:
     return None
 
 
-def _fingerprint(snap: Dict[str, float]) -> tuple:
-    """Stable fingerprint for deduping multi-TP identical log lines."""
+def _fingerprint(snap: FloorDict) -> tuple:
     return tuple(sorted((k, snap[k]) for k in CAPACITY_FIELDS if k in snap))
 
 
-def extract_snapshots_from_log(text: str) -> List[Dict[str, float]]:
+def extract_snapshots_from_log(text: str) -> List[FloorDict]:
     """Extract ordered capacity snapshots from engine log text.
 
     Multi-TP ranks emit identical allocation lines; consecutive identical
     fingerprints are collapsed. Related lines from a single server start
-    (Mamba + KV, or SWA full/swa sub-pool KV lines + SWAKVPool summary) are
-    merged so each snapshot approximates one ``GET /server_info`` sample.
+    (Mamba + KV, SWA sub-pools, EAGLE target+draft) are merged so each
+    snapshot approximates one ``GET /server_info`` sample.
     """
-    raw: List[Dict[str, float]] = []
+    raw: List[FloorDict] = []
     for line in text.splitlines():
         snap = parse_memory_log_line(line)
         if snap is None:
             continue
         if raw and _fingerprint(snap) == _fingerprint(raw[-1]):
             continue  # TP duplicate
-        # Merge into previous if non-conflicting (same server start)
         if raw and _can_merge(raw[-1], snap):
             raw[-1] = {**raw[-1], **snap}
         else:
@@ -172,53 +160,42 @@ def extract_snapshots_from_log(text: str) -> List[Dict[str, float]]:
     return _collapse_to_server_launches(raw)
 
 
-def _can_merge(a: Dict[str, float], b: Dict[str, float]) -> bool:
-    # Two pure-KV snaps with different sizes are not merged here; post-pass
-    # collapses draft/target pairs that share token_capacity. Exact TP
-    # duplicates are already filtered by fingerprint above.
+def _can_merge(a: FloorDict, b: FloorDict) -> bool:
     if _is_kv_only(a) and _is_kv_only(b):
         return False
     for k in b:
         if k in a and a[k] != b[k]:
-            # token_capacity / kv_cache_gb differ across SWA full vs swa
-            # sub-pools and across Mamba+KV partials; allow merge.
             if k in ("token_capacity", "kv_cache_gb"):
                 continue
             return False
     return True
 
 
-def _is_kv_only(snap: Dict[str, float]) -> bool:
+def _is_kv_only(snap: FloorDict) -> bool:
     return set(snap.keys()).issubset({"token_capacity", "kv_cache_gb"})
 
 
-def _collapse_to_server_launches(
-    snaps: List[Dict[str, float]],
-) -> List[Dict[str, float]]:
+def _collapse_to_server_launches(snaps: List[FloorDict]) -> List[FloorDict]:
     """Collapse log lines into one snapshot per ``popen_launch_server``.
 
-    Runtime checks ``GET /server_info`` once per process. Logs often emit more:
-
-    * Hybrid SWA: two sub-pool ``KV Cache is allocated`` lines + ``SWAKVPool``.
-    * Speculative (EAGLE): target + draft pure-KV lines (same token_capacity,
-      different kv_cache_gb). ``/server_info`` reports the target pool only —
-      keep the larger kv_cache_gb.
+    * Hybrid SWA: two sub-pool KV lines + ``SWAKVPool`` summary.
+    * Speculative (EAGLE): target + draft pure-KV (same token_capacity);
+      keep the larger kv_cache_gb (target; what /server_info reports).
     """
     if not snaps:
         return snaps
-    out: List[Dict[str, float]] = []
+    out: List[FloorDict] = []
     for snap in snaps:
         if "swa_size" in snap or "full_size" in snap:
             swa = snap.get("swa_size")
             full = snap.get("full_size") or snap.get("token_capacity")
-            kept: List[Dict[str, float]] = []
+            kept: List[FloorDict] = []
             for prev in out:
                 if not _is_kv_only(prev):
                     kept.append(prev)
                     continue
                 tc = prev.get("token_capacity")
                 if tc is not None and tc in (swa, full):
-                    # Fold kv_cache_gb into the hybrid snap (prefer larger).
                     if "kv_cache_gb" in prev:
                         snap["kv_cache_gb"] = max(
                             float(snap.get("kv_cache_gb", 0.0)),
@@ -230,7 +207,6 @@ def _collapse_to_server_launches(
             out.append(snap)
             continue
 
-        # Draft/target pure-KV pair: same token_capacity, keep larger GB.
         if (
             out
             and _is_kv_only(out[-1])
@@ -249,9 +225,9 @@ def _collapse_to_server_launches(
     return out
 
 
-def snapshot_from_server_info(info: Dict[str, Any]) -> Dict[str, float]:
+def snapshot_from_server_info(info: Dict[str, Any]) -> FloorDict:
     """Build a capacity snapshot from a ``/server_info`` JSON response."""
-    snap: Dict[str, float] = {}
+    snap: FloorDict = {}
 
     if "max_total_num_tokens" in info and info["max_total_num_tokens"] is not None:
         snap["token_capacity"] = int(info["max_total_num_tokens"])
@@ -270,7 +246,6 @@ def snapshot_from_server_info(info: Dict[str, Any]) -> Dict[str, float]:
     if "kvcache" in mem and mem["kvcache"] is not None:
         snap["kv_cache_gb"] = float(mem["kvcache"])
 
-    # Optional richer fields (populated when the server exposes them).
     int_fields = (
         "swa_size",
         "full_size",
@@ -282,11 +257,7 @@ def snapshot_from_server_info(info: Dict[str, Any]) -> Dict[str, float]:
         "dsv4_c4_state",
         "dsv4_c128_state",
     )
-    float_fields = (
-        "swa_mem_gb",
-        "mamba_conv_gb",
-        "mamba_ssm_gb",
-    )
+    float_fields = ("swa_mem_gb", "mamba_conv_gb", "mamba_ssm_gb")
     for field in int_fields:
         if field in mem and mem[field] is not None:
             snap[field] = int(mem[field])
@@ -302,7 +273,7 @@ def fetch_server_memory_snapshot(
     *,
     api_key: Optional[str] = None,
     timeout: float = 30.0,
-) -> Dict[str, float]:
+) -> FloorDict:
     headers = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -316,49 +287,20 @@ def fetch_server_memory_snapshot(
 
 
 def normalize_test_file(path: str) -> str:
-    """Strip absolute CI checkout prefixes down to ``test/...`` or similar."""
+    """Strip absolute CI checkout prefixes down to ``test/...``."""
     path = path.replace("\\", "/")
-    markers = (
+    for marker in (
         "/sglang/test/",
-        "/test/registered/",
-        "/test/manual/",
         "test/registered/",
         "test/manual/",
         "test/",
-    )
-    for marker in markers:
+    ):
         idx = path.find(marker)
         if idx >= 0:
-            # Keep from "test/"
-            if marker.startswith("/"):
-                return (
-                    path[idx + 1 :]
-                    if path[idx + 1 :].startswith("test/")
-                    else path[idx + len("/sglang/") :]
-                )
+            if marker.startswith("/sglang/"):
+                return path[idx + len("/sglang/") :]
             return path[idx:]
-    # Fallback: basename under a best-effort relative path
-    if path.startswith("test/"):
-        return path
     return path.lstrip("./")
-
-
-def current_test_file() -> Optional[str]:
-    env = os.environ.get("SGLANG_TEST_FILE")
-    if env:
-        return normalize_test_file(env)
-    if sys.argv and sys.argv[0]:
-        return normalize_test_file(os.path.abspath(sys.argv[0]))
-    return None
-
-
-def current_suite() -> Optional[str]:
-    return os.environ.get("SGLANG_TEST_SUITE") or None
-
-
-def threshold_key(suite: Optional[str], test_file: str) -> str:
-    suite = suite or "_unknown_suite"
-    return f"{suite}::{test_file}"
 
 
 def mean_floor(values: Sequence[float], factor: float = DEFAULT_FACTOR) -> float:
@@ -368,25 +310,21 @@ def mean_floor(values: Sequence[float], factor: float = DEFAULT_FACTOR) -> float
 
 
 def check_snapshot_against_floor(
-    observed: Dict[str, float],
-    floor: Dict[str, float],
+    observed: FloorDict,
+    floor: FloorDict,
     *,
-    key: str,
-    launch_idx: int,
+    label: str = "",
 ) -> List[str]:
-    """Return a list of failure messages (empty if OK)."""
+    """Return failure messages (empty if OK)."""
     failures: List[str] = []
     for field in CAPACITY_FIELDS:
         if field not in floor:
             continue
         if field not in observed:
-            # Floor has a field the live server did not report — skip rather
-            # than fail (e.g. SWA fields before server_info enrichment lands).
             logger.warning(
-                "Memory threshold %s launch[%d]: floor has %s=%.4g but server "
-                "did not report it; skipping field",
-                key,
-                launch_idx,
+                "Memory floor %s: has %s=%.4g but server did not report it; "
+                "skipping field",
+                label or "?",
                 field,
                 floor[field],
             )
@@ -395,40 +333,94 @@ def check_snapshot_against_floor(
         thr = float(floor[field])
         if obs < thr:
             failures.append(
-                f"{field}: observed={obs:g} < floor={thr:g} "
-                f"(key={key}, launch={launch_idx})"
+                f"{field}: observed={obs:g} < floor={thr:g}"
+                + (f" ({label})" if label else "")
             )
     return failures
 
 
-def _next_launch_index(key: str) -> int:
-    with _lock:
-        idx = _launch_counters.get(key, 0)
-        _launch_counters[key] = idx + 1
-        return idx
+def _floors_from_owner(owner: FloorOwner) -> Optional[List[FloorDict]]:
+    if isinstance(owner, type):
+        class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
+        if class_floors:
+            return list(class_floors)
+        mod = sys.modules.get(owner.__module__)
+        if mod is not None:
+            mod_floors = getattr(mod, MODULE_FLOORS_ATTR, None)
+            if mod_floors:
+                return list(mod_floors)
+        return None
+    # module
+    mod_floors = getattr(owner, MODULE_FLOORS_ATTR, None)
+    return list(mod_floors) if mod_floors else None
 
 
-def reset_launch_counters() -> None:
-    """Test helper: clear per-key launch counters."""
+def _owner_label(owner: FloorOwner) -> str:
+    if isinstance(owner, type):
+        return f"{owner.__module__}.{owner.__qualname__}"
+    return getattr(owner, "__name__", repr(owner))
+
+
+def claim_next_memory_floor(owner: FloorOwner) -> Optional[tuple[FloorDict, int]]:
+    """Return ``(floor, launch_idx)`` for the next server launch, or None."""
+    floors = _floors_from_owner(owner)
+    if not floors:
+        return None
     with _lock:
-        _launch_counters.clear()
+        # Counter lives on the owner that actually holds the list (class if
+        # class override, else the defining module) so multi-class files that
+        # share module floors share one sequence.
+        counter_owner: FloorOwner = owner
+        if isinstance(owner, type):
+            class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
+            if not class_floors:
+                mod = sys.modules.get(owner.__module__)
+                if mod is not None and getattr(mod, MODULE_FLOORS_ATTR, None):
+                    counter_owner = mod
+        idx = int(getattr(counter_owner, _FLOOR_IDX_ATTR, 0))
+        setattr(counter_owner, _FLOOR_IDX_ATTR, idx + 1)
+    if idx >= len(floors):
+        logger.info(
+            "Memory floors %s: launch[%d] beyond declared %d; skipping",
+            _owner_label(owner),
+            idx,
+            len(floors),
+        )
+        return None
+    return floors[idx], idx
+
+
+def find_active_test_owner() -> Optional[FloorOwner]:
+    """Locate the unittest class (or its module) declaring floors.
+
+    Walks the stack for a ``cls`` local that is a ``TestCase`` subclass —
+    the usual pattern in ``setUpClass`` / fixture launch helpers.
+    """
+    for frame_info in inspect.stack(context=0):
+        loc = frame_info.frame.f_locals
+        cls = loc.get("cls")
+        if not isinstance(cls, type):
+            continue
+        try:
+            if not issubclass(cls, unittest.TestCase):
+                continue
+        except TypeError:
+            continue
+        if _floors_from_owner(cls) is not None:
+            return cls
+    # Fallback: __main__ module floors (``python path/to/test.py``).
+    main = sys.modules.get("__main__")
+    if main is not None and getattr(main, MODULE_FLOORS_ATTR, None):
+        return main
+    return None
 
 
 def memory_threshold_check_enabled() -> bool:
-    """Enabled in CI by default; opt-in locally via SGLANG_CHECK_MEMORY_THRESHOLDS=1."""
-    if os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower() in (
-        "0",
-        "false",
-        "no",
-        "off",
-    ):
+    """On in CI by default; force with SGLANG_CHECK_MEMORY_THRESHOLDS=1/0."""
+    flag = os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower()
+    if flag in ("0", "false", "no", "off"):
         return False
-    if os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    ):
+    if flag in ("1", "true", "yes", "on"):
         return True
     return os.environ.get("SGLANG_IS_IN_CI", "").lower() in ("1", "true", "yes")
 
@@ -437,83 +429,60 @@ def maybe_check_server_memory(
     base_url: str,
     *,
     api_key: Optional[str] = None,
-    test_file: Optional[str] = None,
-    suite: Optional[str] = None,
+    floor: Optional[FloorDict] = None,
+    owner: Optional[FloorOwner] = None,
 ) -> None:
-    """Fetch /server_info and assert capacity >= stored floors.
+    """Assert capacity against an explicit floor or the next declared floor.
 
-    No-op when disabled, when the threshold file has no entry for this test,
-    or when the server cannot be queried. Raises ``AssertionError`` on
-    regression.
+    No-op when disabled, when no floor is available, or when /server_info
+    cannot be queried. Raises ``AssertionError`` on regression.
     """
     if not memory_threshold_check_enabled():
         return
 
-    test_file = test_file or current_test_file()
-    suite = suite if suite is not None else current_suite()
-    if not test_file:
-        return
-
-    thresholds = load_thresholds()
-    key = threshold_key(suite, test_file)
-    entry = thresholds.get(key)
-    if entry is None:
-        # Also try without suite (legacy / single-key entries).
-        entry = thresholds.get(test_file)
-        if entry is None:
+    label = ""
+    launch_idx = -1
+    if floor is None:
+        owner = owner or find_active_test_owner()
+        if owner is None:
             return
-        key = test_file
+        claimed = claim_next_memory_floor(owner)
+        if claimed is None:
+            return
+        floor, launch_idx = claimed
+        label = f"{_owner_label(owner)} launch[{launch_idx}]"
+    else:
+        label = "explicit floor"
 
-    launches: List[Dict[str, float]] = entry.get("launches") or []
-    if not launches:
-        return
-
-    launch_idx = _next_launch_index(key)
-    if launch_idx >= len(launches):
-        # Extra launches beyond recorded sequence — ignore.
-        logger.info(
-            "Memory threshold %s: launch[%d] beyond recorded %d; skipping",
-            key,
-            launch_idx,
-            len(launches),
-        )
-        return
-
-    floor = launches[launch_idx]
     try:
         observed = fetch_server_memory_snapshot(base_url, api_key=api_key)
     except Exception as e:
         logger.warning(
-            "Memory threshold check skipped for %s launch[%d]: failed to query "
-            "/server_info (%s)",
-            key,
-            launch_idx,
+            "Memory floor check skipped for %s: failed to query /server_info (%s)",
+            label,
             e,
         )
         return
 
     if not observed:
-        logger.warning(
-            "Memory threshold check skipped for %s launch[%d]: empty snapshot",
-            key,
-            launch_idx,
-        )
+        logger.warning("Memory floor check skipped for %s: empty snapshot", label)
         return
 
-    logger.info(
-        "Memory threshold check %s launch[%d]: observed=%s floor=%s",
-        key,
-        launch_idx,
-        observed,
-        floor,
-    )
-    failures = check_snapshot_against_floor(
-        observed, floor, key=key, launch_idx=launch_idx
-    )
+    logger.info("Memory floor check %s: observed=%s floor=%s", label, observed, floor)
+    failures = check_snapshot_against_floor(observed, floor, label=label)
     if failures:
         raise AssertionError(
             "Memory capacity regression detected:\n  "
             + "\n  ".join(failures)
-            + "\nRe-run scripts/ci/utils/update_memory_thresholds.py after an "
-            "intentional memory optimization."
+            + "\nUpdate MEMORY_CAPACITY_FLOORS in the test file after an "
+            "intentional optimization via "
+            "scripts/ci/utils/update_memory_thresholds.py"
         )
+
+
+def reset_floor_counters(*owners: FloorOwner) -> None:
+    """Test helper: clear launch counters on the given owners."""
+    with _lock:
+        for owner in owners:
+            if hasattr(owner, _FLOOR_IDX_ATTR):
+                delattr(owner, _FLOOR_IDX_ATTR)

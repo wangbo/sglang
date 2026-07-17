@@ -33,6 +33,13 @@ register_cuda_ci(est_time=240, stage="base-b", runner_config="1-gpu-large")
 STDOUT_FILENAME = "post_capture_kv_sizing_stdout.log"
 STDERR_FILENAME = "post_capture_kv_sizing_stderr.log"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 509490, "kv_cache_gb": 62.1918},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestPostCaptureKVSizing(CustomTestCase):
     @classmethod

@@ -11,6 +11,13 @@ register_cuda_ci(est_time=960, stage="base-c", runner_config="4-gpu-b200")
 
 FULL_DEEPSEEK_V3_FP4_MODEL_PATH = "nvidia/DeepSeek-V3-0324-FP4"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-b200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1707678, "kv_cache_gb": 55.8855},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDeepseekV3FP4SymmetricMemory(GSM8KMixin, DefaultServerBase):
     model = FULL_DEEPSEEK_V3_FP4_MODEL_PATH

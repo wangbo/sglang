@@ -38,6 +38,14 @@ QWEN35_27B_MODEL = "Qwen/Qwen3.5-27B"
 
 register_cuda_ci(est_time=97, stage="base-c", runner_config="4-gpu-h100")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-h100 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1606862, "kv_cache_gb": 55.1694},
+    {"token_capacity": 1650214, "kv_cache_gb": 56.661},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(
     is_in_ci(),

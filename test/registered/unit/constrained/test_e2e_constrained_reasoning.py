@@ -29,6 +29,13 @@ MODEL = "Qwen/Qwen3-0.6B"
 BASE_URL = "http://127.0.0.1:39877"
 API_KEY = "sk-test-1234"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[2] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 237717, "kv_cache_gb": 25.3836},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestConstrainedReasoningE2E(CustomTestCase):
     @classmethod

@@ -28,6 +28,17 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=350, stage="extra-b", runner_config="4-gpu-h100")
 register_amd_ci(est_time=350, suite="stage-c-test-4-gpu-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-h100 samples=[3, 3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 126043, "kv_cache_gb": 11.5434},
+    {"token_capacity": 839273, "kv_cache_gb": 38.412},
+    {"token_capacity": 624565, "kv_cache_gb": 66.7062},
+    {"token_capacity": 1244142, "kv_cache_gb": 66.4488},
+    {"token_capacity": 2184045, "kv_cache_gb": 58.311},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(
     is_in_amd_ci(),

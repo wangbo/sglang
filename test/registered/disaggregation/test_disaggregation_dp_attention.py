@@ -18,6 +18,14 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=443, stage="base-c", runner_config="8-gpu-h20")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-8-gpu-h20 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 2214350, "kv_cache_gb": 71.2701},
+    {"token_capacity": 2243134, "kv_cache_gb": 72.2007},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDisaggregationDPAttention(PDDisaggregationServerBase):
     """PD-disagg + DP-attention e2e on `total_tokens` LB — the most complex

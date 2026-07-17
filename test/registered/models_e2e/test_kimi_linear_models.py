@@ -13,6 +13,19 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=178, stage="base-b", runner_config="2-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 1309068,
+        "kv_cache_gb": 9.8307,
+        "mamba_cache_size": 437,
+        "mamba_conv_gb": 0.297,
+        "mamba_ssm_gb": 8.5635,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestKimiLinear(CustomTestCase):
     @classmethod

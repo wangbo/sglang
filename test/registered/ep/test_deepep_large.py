@@ -19,6 +19,14 @@ register_cuda_ci(est_time=528, stage="extra-b", runner_config="deepep-8-gpu-h200
 
 DEEPSEEK_V32_MODEL_PATH = "deepseek-ai/DeepSeek-V3.2"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-deepep-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 147580, "kv_cache_gb": 9.6591},
+    {"token_capacity": 295489, "kv_cache_gb": 21.5556},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skip("Skip for saving ci time")
 class TestDeepseek(CustomTestCase):

@@ -109,22 +109,36 @@ This README mostly describes the NVIDIA GPU CI pipeline. Other hardware backends
 
 ## E2E Memory Capacity Guard
 
-CI e2e tests that launch a server via `popen_launch_server` assert that
-KV / hybrid pool capacity has not regressed. After the server is healthy,
-the harness calls `GET /server_info` and compares capacity fields against
-floors in `python/sglang/test/memory_thresholds.json` (key =
-`{suite}::{test_file}`, floors = mean of recent scheduled/nightly logs × 0.99).
+Server-launching e2e tests can pin KV / hybrid pool capacity so regressions
+fail CI. Declare floors on the **test module** (or class):
 
-To refresh floors after an intentional memory optimization:
+```python
+# Floors for each sequential server launch (mean of recent CI × 0.99).
+# Refresh: python3 scripts/ci/utils/update_memory_thresholds.py
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 52358, "kv_cache_gb": 6.39},
+]
 
-```bash
-python3 scripts/ci/utils/update_memory_thresholds.py
-# or from pre-downloaded logs:
-python3 scripts/ci/utils/update_memory_thresholds.py --log-dir /path/to/logs
+class TestFoo(CustomTestCase):
+    # Optional per-class override instead of the module list:
+    # memory_capacity_floors = [{"token_capacity": 52358}]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.process = popen_launch_server(...)  # checks next floor after health
 ```
 
-Disable locally with `SGLANG_CHECK_MEMORY_THRESHOLDS=0`. Force on outside CI with
-`SGLANG_CHECK_MEMORY_THRESHOLDS=1`.
+After `popen_launch_server` (or PD prefill/decode health) succeeds, the harness
+`GET /server_info` and requires observed ≥ the next unused floor. No floors
+declared → no check.
+
+```bash
+# Mine scheduled/nightly logs and rewrite MEMORY_CAPACITY_FLOORS in test files
+python3 scripts/ci/utils/update_memory_thresholds.py
+python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
+```
+
+Disable with `SGLANG_CHECK_MEMORY_THRESHOLDS=0`; force on with `=1`.
 
 ## Other Notes
 

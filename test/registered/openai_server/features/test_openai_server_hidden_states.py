@@ -23,6 +23,16 @@ register_amd_ci(
     disabled="see https://github.com/sgl-project/sglang/issues/11127",
 )
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 36348, "kv_cache_gb": 4.4352},
+    {"token_capacity": 15687, "kv_cache_gb": 7.6626},
+    {"token_capacity": 794062, "kv_cache_gb": 24.2352},
+    {"token_capacity": 806044, "kv_cache_gb": 24.5916},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class BaseTestOpenAIServerWithHiddenStates(ABC):
 

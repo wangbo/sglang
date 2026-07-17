@@ -11,6 +11,19 @@ from sglang.test.kv_canary.pp_fixture import CanaryPPFixture
 register_cuda_ci(est_time=220, stage="extra-a", runner_config="2-gpu-large")
 register_amd_ci(est_time=298, stage="extra-a", runner_config="2-gpu-large-amd")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 81100,
+        "kv_cache_gb": 1.089,
+        "swa_size": 16220,
+        "full_size": 81100,
+        "swa_mem_gb": 1.5147,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestPPPerturbSwaSwa(CanaryPPFixture):
 

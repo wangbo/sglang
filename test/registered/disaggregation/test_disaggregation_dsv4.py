@@ -34,6 +34,30 @@ _EAGLE_SPEC_ARGS = [
     "2",
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-deepep-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 5402073,
+        "dsv4_full": 5402073,
+        "dsv4_swa": 540080,
+        "dsv4_c4": 1350518,
+        "dsv4_c128": 42203,
+        "dsv4_c4_state": 67510,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 5378588,
+        "dsv4_full": 5378588,
+        "dsv4_swa": 537799,
+        "dsv4_c4": 1344647,
+        "dsv4_c128": 42020,
+        "dsv4_c4_state": 67224,
+        "dsv4_c128_state": 0,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestDisaggregationDSV4(SpecDecodingMixin, PDDisaggregationServerBase, GSM8KMixin):
     gsm8k_accuracy_thres = 0.93

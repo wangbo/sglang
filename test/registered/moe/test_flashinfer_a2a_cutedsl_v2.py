@@ -25,6 +25,19 @@ MODEL = "nvidia/Qwen3.5-397B-A17B-NVFP4"
 SKIP_TEST = torch.cuda.get_device_capability() < (10, 0)
 SKIP_REASON = "Requires Blackwell (B200, sm_100a) or above."
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-4-gpu-b200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 2174895,
+        "kv_cache_gb": 31.1058,
+        "mamba_cache_size": 155,
+        "mamba_conv_gb": 0.4851,
+        "mamba_ssm_gb": 27.4923,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(SKIP_TEST, SKIP_REASON)
 class TestCuteDslFlashinferA2A(CustomTestCase):

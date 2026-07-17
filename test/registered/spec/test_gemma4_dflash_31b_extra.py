@@ -33,6 +33,19 @@ SERVER_LAUNCH_TIMEOUT = DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH * 3
 GSM8K_SCORE_THRESHOLD = 0.75
 ACCEPT_LENGTH_THRESHOLD = 5.4
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-2-gpu-large samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 26479,
+        "kv_cache_gb": 8.0784,
+        "swa_size": 21183,
+        "full_size": 26479,
+        "swa_mem_gb": 9.0882,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def get_server_info(base_url: str) -> dict:
     response = requests.get(base_url + "/server_info", timeout=10)

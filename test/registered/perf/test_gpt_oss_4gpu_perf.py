@@ -8,6 +8,19 @@ register_cuda_ci(est_time=600, suite="nightly-4-gpu-b200", nightly=True)
 
 PROFILE_DIR = "performance_profiles_gpt_oss_4gpu"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=nightly-4-gpu-b200 samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 9359665,
+        "kv_cache_gb": 80.3286,
+        "swa_size": 7487694,
+        "full_size": 9359665,
+        "swa_mem_gb": 144.5994,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestNightlyGptOss4GpuPerformance(unittest.TestCase):
     @classmethod

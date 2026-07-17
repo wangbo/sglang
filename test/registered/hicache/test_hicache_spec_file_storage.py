@@ -19,6 +19,14 @@ from sglang.test.test_utils import CustomTestCase
 
 register_cuda_ci(est_time=200, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 50899, "kv_cache_gb": 6.2238},
+    {"token_capacity": 49420, "kv_cache_gb": 6.039},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(is_hip(), "HiCache + EAGLE3 file-storage loadback e2e is CUDA-only.")
 class TestHiCacheSpecFileStorage(HiCacheSpecStorageMixin, CustomTestCase):

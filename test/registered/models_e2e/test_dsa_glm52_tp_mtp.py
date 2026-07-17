@@ -14,6 +14,13 @@ register_cuda_ci(
     runner_config="8-gpu-h200",
 )
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-8-gpu-h200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 199330, "kv_cache_gb": 18.6021},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestGLM52TPMTP(
     DsaMtpServerBase, DsaMtpEvalConfigDefaults, GSM8KMixin, SpecDecodingMixin

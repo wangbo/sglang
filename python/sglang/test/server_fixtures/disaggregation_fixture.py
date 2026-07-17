@@ -180,8 +180,7 @@ class PDDisaggregationServerBase(CustomTestCase):
         print(f"Server {url} is ready")
         # Prefill/decode sglang workers allocate KV pools; the LB/router does
         # not. popen_launch_pd_server only spawns (no health wait), so the
-        # memory-capacity guard runs here after the worker is healthy — same
-        # floors that update_memory_thresholds.py mines from PD test logs.
+        # MEMORY_CAPACITY_FLOORS check runs here once the worker is healthy.
         if process is None or process is getattr(cls, "process_lb", None):
             return
         base_url = url[: -len("/health")] if url.endswith("/health") else url

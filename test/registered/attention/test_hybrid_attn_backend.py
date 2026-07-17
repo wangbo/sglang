@@ -13,6 +13,16 @@ from sglang.test.test_utils import (
 # Multiple test classes: base, MLA, TorchCompile, SpecDecode variants
 register_cuda_ci(est_time=407, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-a-test-1-gpu-large samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 410337, "kv_cache_gb": 50.094},
+    {"token_capacity": 1226263, "kv_cache_gb": 39.4713},
+    {"token_capacity": 102470, "kv_cache_gb": 50.0346},
+    {"token_capacity": 410337, "kv_cache_gb": 50.094},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestHybridAttnBackendMLA(TestHybridAttnBackendBase):
     accuracy_threshold = 0.60

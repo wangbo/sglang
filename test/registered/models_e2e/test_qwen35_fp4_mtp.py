@@ -52,6 +52,19 @@ MTP_BASE_ARGS = [
     '{"enable_multithread_load": true,"num_threads": 64}',
 ]
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-4-gpu-b200 samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 6654954,
+        "kv_cache_gb": 3.168,
+        "mamba_cache_size": 927,
+        "mamba_conv_gb": 0.7128,
+        "mamba_ssm_gb": 20.4039,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def _run_mtp_gsm8k(test_case):
     args = SimpleNamespace(

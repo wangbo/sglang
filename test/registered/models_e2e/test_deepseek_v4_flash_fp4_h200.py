@@ -26,6 +26,48 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=600, stage="base-c", runner_config="deepep-8-gpu-h200")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-deepep-8-gpu-h200 samples=[3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 9382855,
+        "dsv4_full": 9382855,
+        "dsv4_swa": 938234,
+        "dsv4_c4": 2345713,
+        "dsv4_c128": 73303,
+        "dsv4_c4_state": 117279,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 8120724,
+        "dsv4_full": 8120724,
+        "dsv4_swa": 812021,
+        "dsv4_c4": 2030181,
+        "dsv4_c128": 63443,
+        "dsv4_c4_state": 101502,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 9070617,
+        "dsv4_full": 9070617,
+        "dsv4_swa": 907061,
+        "dsv4_c4": 2267654,
+        "dsv4_c128": 70864,
+        "dsv4_c4_state": 113382,
+        "dsv4_c128_state": 0,
+    },
+    {
+        "token_capacity": 10303096,
+        "dsv4_full": 10303096,
+        "dsv4_swa": 1030233,
+        "dsv4_c4": 2575774,
+        "dsv4_c128": 80492,
+        "dsv4_c4_state": 64389,
+        "dsv4_c128_state": 0,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def _flashinfer_has_sm90_cutlass_mxfp4() -> bool:
     try:

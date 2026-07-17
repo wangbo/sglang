@@ -26,6 +26,13 @@ register_cuda_ci(est_time=60, stage="base-b", runner_config="1-gpu-small")
 WHISPER_MODEL = "openai/whisper-large-v3"
 AUDIO_URL = "https://raw.githubusercontent.com/sgl-project/sgl-test-files/refs/heads/main/audios/Trump_WEF_2018_10s.mp3"
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-b-test-1-gpu-small samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 51747, "kv_cache_gb": 23.6808},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 def download_audio_bytes(url=AUDIO_URL):
     """Download audio file and return raw bytes."""

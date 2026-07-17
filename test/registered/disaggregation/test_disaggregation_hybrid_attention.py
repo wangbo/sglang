@@ -14,6 +14,68 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=310, stage="extra-b", runner_config="8-gpu-h200")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=extra-b-test-8-gpu-h200 samples=[3, 3, 3, 3, 3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {
+        "token_capacity": 1748213,
+        "kv_cache_gb": 26.7696,
+        "mamba_cache_size": 553,
+        "mamba_conv_gb": 0.5511,
+        "mamba_ssm_gb": 23.4828,
+    },
+    {
+        "token_capacity": 1559884,
+        "kv_cache_gb": 26.8752,
+        "mamba_cache_size": 446,
+        "mamba_conv_gb": 0.5577,
+        "mamba_ssm_gb": 23.6808,
+    },
+    {
+        "token_capacity": 4025073,
+        "kv_cache_gb": 46.0614,
+        "mamba_cache_size": 2304,
+        "mamba_conv_gb": 0.9504,
+        "mamba_ssm_gb": 40.5141,
+    },
+    {
+        "token_capacity": 4050688,
+        "kv_cache_gb": 46.3584,
+        "mamba_cache_size": 2318,
+        "mamba_conv_gb": 0.9537,
+        "mamba_ssm_gb": 40.7715,
+    },
+    {
+        "token_capacity": 16782117,
+        "kv_cache_gb": 64.02,
+        "mamba_cache_size": 1722,
+        "mamba_conv_gb": 0.7953,
+        "mamba_ssm_gb": 56.7963,
+    },
+    {
+        "token_capacity": 16622424,
+        "kv_cache_gb": 63.4062,
+        "mamba_cache_size": 1706,
+        "mamba_conv_gb": 0.7887,
+        "mamba_ssm_gb": 56.2749,
+    },
+    {
+        "token_capacity": 16782117,
+        "kv_cache_gb": 64.02,
+        "mamba_cache_size": 1722,
+        "mamba_conv_gb": 0.7953,
+        "mamba_ssm_gb": 56.7963,
+    },
+    {
+        "token_capacity": 16544493,
+        "kv_cache_gb": 63.1092,
+        "mamba_cache_size": 1697,
+        "mamba_conv_gb": 0.7854,
+        "mamba_ssm_gb": 55.9911,
+    },
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 @unittest.skipIf(is_in_ci(), "Temporarily disable the flaky test.")
 class TestDisaggregationHybridAttentionGDN(PDDisaggregationServerBase):

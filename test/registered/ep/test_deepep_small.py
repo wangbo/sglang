@@ -18,6 +18,19 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=478, stage="base-c", runner_config="deepep-4-gpu-h100")
 
+# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
+# suite=base-c-test-deepep-4-gpu-h100 samples=[3, 3, 3, 3, 3, 3, 3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = [
+    {"token_capacity": 1668387, "kv_cache_gb": 53.6976},
+    {"token_capacity": 1671703, "kv_cache_gb": 53.8065},
+    {"token_capacity": 929221, "kv_cache_gb": 29.9079},
+    {"token_capacity": 1617351, "kv_cache_gb": 52.0542},
+    {"token_capacity": 1445694, "kv_cache_gb": 46.53},
+    {"token_capacity": 1443350, "kv_cache_gb": 46.4607},
+    {"token_capacity": 1705102, "kv_cache_gb": 54.8856},
+]
+# --- MEMORY_CAPACITY_FLOORS end ---
+
 
 class TestPureDP(CustomTestCase):
     @classmethod
