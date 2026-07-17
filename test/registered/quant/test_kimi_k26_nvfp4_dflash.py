@@ -31,7 +31,7 @@ EXTRA_ARGS = [
 ]
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-b200 samples=[1] updated=2026-07-17
+# gpu=b200 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 2098229, "kv_cache_gb": 68.6664},
 ]

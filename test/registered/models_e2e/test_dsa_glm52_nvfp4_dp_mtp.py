@@ -15,7 +15,7 @@ register_cuda_ci(
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-4-gpu-b200 samples=[3] updated=2026-07-17
+# gpu=b200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 403941, "kv_cache_gb": 20.7801},
 ]

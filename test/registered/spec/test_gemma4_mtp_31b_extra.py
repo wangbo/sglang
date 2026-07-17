@@ -34,7 +34,7 @@ GSM8K_SCORE_THRESHOLD = 0.75
 ACCEPT_LENGTH_THRESHOLD = 1.5
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-2-gpu-large samples=[3] updated=2026-07-17
+# gpu=h100 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 63,

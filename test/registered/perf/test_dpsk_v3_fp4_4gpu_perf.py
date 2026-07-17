@@ -12,7 +12,7 @@ register_cuda_ci(est_time=2000, suite="nightly-4-gpu-b200", nightly=True)
 FULL_DEEPSEEK_V3_FP4_MODEL_PATH = "nvidia/DeepSeek-V3-0324-FP4"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-b200 samples=[1, 1] updated=2026-07-17
+# gpu=b200 samples=[1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 849467, "kv_cache_gb": 55.5984},
     {"token_capacity": 337708, "kv_cache_gb": 22.1067},

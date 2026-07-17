@@ -18,7 +18,7 @@ GQA_MODEL_PATH = "Qwen/Qwen3-30B-A3B-FP8"
 GSM8K_BASELINE_ACCURACY = 0.93
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-deepep-4-gpu-h100 samples=[3, 3, 3] updated=2026-07-17
+# gpu=h100 samples=[3, 3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 1068107, "kv_cache_gb": 48.8862},
     {"token_capacity": 591197, "kv_cache_gb": 54.1332},

@@ -15,7 +15,7 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=300, suite="nightly-4-gpu-b200", nightly=True)
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-b200 samples=[1] updated=2026-07-17
+# gpu=b200 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 3916788,

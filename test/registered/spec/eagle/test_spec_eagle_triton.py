@@ -20,7 +20,7 @@ from sglang.test.server_fixtures.spec_eagle_fixture import Eagle3Base, EagleLlam
 register_cuda_ci(est_time=480, stage="base-b", runner_config="1-gpu-small")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[3, 3] updated=2026-07-17
+# gpu=5090 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 71674, "kv_cache_gb": 8.7516},
     {"token_capacity": 15687, "kv_cache_gb": 7.6626},

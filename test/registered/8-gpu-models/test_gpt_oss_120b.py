@@ -13,23 +13,43 @@ GPT_OSS_120B_MXFP4_MODEL_PATH = "openai/gpt-oss-120b"
 GPT_OSS_120B_EAGLE3_DRAFT_MODEL_PATH = "lmsys/EAGLE3-gpt-oss-120b-bf16"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-common samples=[2, 2] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 15245313,
-        "kv_cache_gb": 65.4192,
-        "swa_size": 13885789,
-        "full_size": 17357236,
-        "swa_mem_gb": 134.0806,
-    },
-    {
-        "token_capacity": 15245313,
-        "kv_cache_gb": 7.2666,
-        "swa_size": 12196244,
-        "full_size": 15245313,
-        "swa_mem_gb": 117.7655,
-    },
-]
+# multi-gpu floors; b200:samples=[1, 1], h200:samples=[1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[1, 1]
+    "b200": [
+        {
+            "token_capacity": 17114423,
+            "kv_cache_gb": 73.4382,
+            "swa_size": 15594416,
+            "full_size": 19493020,
+            "swa_mem_gb": 150.579,
+        },
+        {
+            "token_capacity": 17114423,
+            "kv_cache_gb": 8.1576,
+            "swa_size": 13691525,
+            "full_size": 17114423,
+            "swa_mem_gb": 132.2046,
+        },
+    ],
+    # samples=[1, 1]
+    "h200": [
+        {
+            "token_capacity": 13376204,
+            "kv_cache_gb": 57.4002,
+            "swa_size": 12177162,
+            "full_size": 15221452,
+            "swa_mem_gb": 117.5823,
+        },
+        {
+            "token_capacity": 13376204,
+            "kv_cache_gb": 6.3756,
+            "swa_size": 10700963,
+            "full_size": 13376204,
+            "swa_mem_gb": 103.3263,
+        },
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

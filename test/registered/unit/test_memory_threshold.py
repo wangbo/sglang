@@ -11,9 +11,11 @@ from sglang.test.memory_threshold import (
     check_snapshot_against_floor,
     claim_next_memory_floor,
     extract_snapshots_from_log,
+    gpu_family_from_text,
     mean_floor,
     parse_memory_log_line,
     reset_floor_counters,
+    resolve_launch_floors,
     snapshot_from_server_info,
 )
 from sglang.test.test_utils import CustomTestCase
@@ -190,6 +192,38 @@ class TestFloorCheck(CustomTestCase):
         self.assertEqual(a, ({"token_capacity": 100}, 0))
         self.assertEqual(b, ({"token_capacity": 200}, 1))
         self.assertIsNone(c)
+
+    def test_gpu_family_from_text(self):
+        self.assertEqual(gpu_family_from_text("NVIDIA H200"), "h200")
+        self.assertEqual(
+            gpu_family_from_text("nightly-test-general-8-gpu-b200"), "b200"
+        )
+        self.assertEqual(gpu_family_from_text("base-b-test-1-gpu-small"), "5090")
+        self.assertEqual(gpu_family_from_text("base-b-test-1-gpu-large"), "h100")
+        self.assertEqual(gpu_family_from_text("nightly-8-gpu-common"), None)
+
+    def test_resolve_multi_gpu_dict(self):
+        spec = {
+            "h200": [{"token_capacity": 100}],
+            "b200": [{"token_capacity": 200}],
+        }
+        self.assertEqual(
+            resolve_launch_floors(spec, gpu_family="h200"),
+            [{"token_capacity": 100}],
+        )
+        self.assertEqual(
+            resolve_launch_floors(spec, gpu_family="b200"),
+            [{"token_capacity": 200}],
+        )
+        # Missing GPU: do not fall back to another chip's floors.
+        self.assertIsNone(resolve_launch_floors(spec, gpu_family="h100"))
+
+    def test_resolve_list_is_universal(self):
+        spec = [{"token_capacity": 50}]
+        self.assertEqual(
+            resolve_launch_floors(spec, gpu_family="h200"),
+            [{"token_capacity": 50}],
+        )
 
 
 if __name__ == "__main__":

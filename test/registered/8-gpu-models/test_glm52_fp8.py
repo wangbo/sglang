@@ -27,12 +27,21 @@ MTP_ARGS = [
 ]
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-common samples=[2, 2, 2] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 724553, "kv_cache_gb": 43.4115},
-    {"token_capacity": 532287, "kv_cache_gb": 30.6702},
-    {"token_capacity": 474186, "kv_cache_gb": 26.8834},
-]
+# multi-gpu floors; b200:samples=[1, 1, 1], h200:samples=[1, 1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[1, 1, 1]
+    "b200": [
+        {"token_capacity": 1155496, "kv_cache_gb": 59.4297},
+        {"token_capacity": 907315, "kv_cache_gb": 46.6686},
+        {"token_capacity": 829192, "kv_cache_gb": 42.6492},
+    ],
+    # samples=[1, 1, 1]
+    "h200": [
+        {"token_capacity": 293610, "kv_cache_gb": 27.3933},
+        {"token_capacity": 157259, "kv_cache_gb": 14.6718},
+        {"token_capacity": 119180, "kv_cache_gb": 11.1177},
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

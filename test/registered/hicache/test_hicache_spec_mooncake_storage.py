@@ -32,7 +32,7 @@ from sglang.test.test_utils import CustomTestCase, find_available_port
 register_cuda_ci(est_time=240, stage="extra-a", runner_config="2-gpu-large")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-2-gpu-large samples=[3, 3] updated=2026-07-17
+# gpu=h100 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 51152, "kv_cache_gb": 6.2502},
     {"token_capacity": 50033, "kv_cache_gb": 6.1182},

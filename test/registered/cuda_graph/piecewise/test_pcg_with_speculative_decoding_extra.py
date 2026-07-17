@@ -11,7 +11,7 @@ from sglang.test.server_fixtures.pcg_spec_fixture import PCGSpecBase
 register_cuda_ci(est_time=531, suite="nightly-4-gpu", nightly=True)
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu samples=[1] updated=2026-07-17
+# gpu=h100 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 117910,

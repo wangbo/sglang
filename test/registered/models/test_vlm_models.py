@@ -19,7 +19,7 @@ register_amd_ci(est_time=850, suite="stage-b-test-1-gpu-small-amd-nondeterminist
 _is_hip = is_hip()
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-1-gpu-large samples=[3] updated=2026-07-17
+# gpu=h100 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 792835, "kv_cache_gb": 53.0574},
 ]

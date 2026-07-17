@@ -29,7 +29,7 @@ SERVER_LAUNCH_TIMEOUT = 3600
 DEEPEP_CONFIG = '{"normal_dispatch":{"num_sms":96},"normal_combine":{"num_sms":96}}'
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-deepep-8-gpu-h200 samples=[3] updated=2026-07-17
+# gpu=h200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 4995809,

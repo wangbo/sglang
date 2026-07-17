@@ -31,7 +31,7 @@ register_amd_ci(est_time=32, suite="stage-b-test-1-gpu-small-amd")
 _MODEL_NAME = "Qwen/Qwen3-0.6B"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[3] updated=2026-07-17
+# gpu=5090 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 238289, "kv_cache_gb": 25.443},
 ]

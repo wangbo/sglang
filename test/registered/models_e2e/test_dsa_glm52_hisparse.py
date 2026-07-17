@@ -12,7 +12,7 @@ register_cuda_ci(est_time=720, stage="extra-b", runner_config="8-gpu-h200")
 GLM52_FP8_MODEL_PATH = "zai-org/GLM-5.2-FP8"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-8-gpu-h200 samples=[3] updated=2026-07-17
+# gpu=h200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 157259, "kv_cache_gb": 20.7108},
 ]

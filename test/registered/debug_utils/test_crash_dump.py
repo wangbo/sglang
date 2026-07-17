@@ -26,7 +26,7 @@ register_amd_ci(est_time=40, suite="nightly-amd-1-gpu", nightly=True)
 register_cpu_ci(est_time=225, suite="base-c-test-cpu")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-1-gpu samples=[1] updated=2026-07-17
+# gpu=h100 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 592538, "kv_cache_gb": 63.2808},
 ]

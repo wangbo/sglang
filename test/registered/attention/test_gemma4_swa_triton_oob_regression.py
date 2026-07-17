@@ -39,7 +39,7 @@ CONCURRENCY = 128
 MAX_TOKENS = 256
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+# gpu=h100 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 32440,

@@ -29,7 +29,7 @@ _INVALID_SAMPLING_MASK_ERROR = (
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[4] updated=2026-07-17
+# gpu=5090 samples=[4] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 620323, "kv_cache_gb": 18.9288},
 ]

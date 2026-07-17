@@ -21,7 +21,7 @@ QWEN35_MODEL = "Qwen/Qwen3.5-9B"
 SERVER_LAUNCH_TIMEOUT = 600
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-2-gpu-large samples=[4] updated=2026-07-17
+# gpu=h100 samples=[4] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 2938462,

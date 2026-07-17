@@ -9,7 +9,7 @@ from sglang.test.server_fixtures.default_fixture import DefaultServerBase
 register_cuda_ci(est_time=350, stage="base-c", runner_config="8-gpu-h200")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-8-gpu-h200 samples=[3, 3, 1, 1] updated=2026-07-17
+# gpu=h200 samples=[3, 3, 1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 298510,

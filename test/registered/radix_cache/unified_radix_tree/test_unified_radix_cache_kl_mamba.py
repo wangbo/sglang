@@ -28,7 +28,7 @@ MAMBA_TRACK_INTERVAL = 128
 MAMBA_CHUNKED_PREFILL_SIZE = 2048
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-4-gpu-h100 samples=[3, 3] updated=2026-07-17
+# gpu=h100 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 3253635,

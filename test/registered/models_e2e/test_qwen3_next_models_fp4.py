@@ -10,7 +10,7 @@ register_cuda_ci(est_time=500, suite="nightly-4-gpu-b200", nightly=True)
 QWEN3_NEXT_MODEL_FP4 = "nvidia/Qwen3-Next-80B-A3B-Instruct-NVFP4"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-b200 samples=[1] updated=2026-07-17
+# gpu=b200 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 14119966,

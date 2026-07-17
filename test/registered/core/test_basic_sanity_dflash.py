@@ -23,7 +23,7 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=200, stage="base-a", runner_config="1-gpu-small")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-a-test-1-gpu-small samples=[3] updated=2026-07-17
+# gpu=5090 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 30583, "kv_cache_gb": 3.7422},
 ]

@@ -15,7 +15,7 @@ register_cuda_ci(est_time=400, stage="extra-b", runner_config="4-gpu-b200")
 GLM52_NVFP4_MODEL_PATH = "nvidia/GLM-5.2-NVFP4"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-4-gpu-b200 samples=[3] updated=2026-07-17
+# gpu=b200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 335871, "kv_cache_gb": 17.2755},
 ]

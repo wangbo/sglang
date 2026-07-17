@@ -23,7 +23,7 @@ register_xpu_ci(
 _is_xpu = is_xpu()
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-large samples=[3, 3] updated=2026-07-17
+# gpu=h100 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 387144, "kv_cache_gb": 47.2626},
     {"token_capacity": 391024, "kv_cache_gb": 47.7312},

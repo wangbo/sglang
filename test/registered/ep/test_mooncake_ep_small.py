@@ -20,7 +20,7 @@ register_cuda_ci(est_time=82, stage="base-c", runner_config="deepep-4-gpu-h100")
 ib_devices = get_rdma_devices_args()
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-deepep-4-gpu-h100 samples=[3] updated=2026-07-17
+# gpu=h100 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 796458, "kv_cache_gb": 25.6311},
 ]

@@ -30,7 +30,7 @@ BASE_URL = "http://127.0.0.1:39877"
 API_KEY = "sk-test-1234"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[2] updated=2026-07-17
+# gpu=5090 samples=[2] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 237717, "kv_cache_gb": 25.3836},
 ]

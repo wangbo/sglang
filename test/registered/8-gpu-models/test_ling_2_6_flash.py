@@ -15,16 +15,29 @@ from sglang.test.server_fixtures.default_fixture import DefaultServerBase
 register_cuda_ci(est_time=600, suite="nightly-8-gpu-common", nightly=True)
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-common samples=[2] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 11111601,
-        "kv_cache_gb": 11.9196,
-        "mamba_cache_size": 253,
-        "mamba_conv_gb": 0.0,
-        "mamba_ssm_gb": 3.4749,
-    },
-]
+# multi-gpu floors; b200:samples=[1], h200:samples=[1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[1]
+    "b200": [
+        {
+            "token_capacity": 13758031,
+            "kv_cache_gb": 14.7609,
+            "mamba_cache_size": 253,
+            "mamba_conv_gb": 0.0,
+            "mamba_ssm_gb": 3.4749,
+        },
+    ],
+    # samples=[1]
+    "h200": [
+        {
+            "token_capacity": 8465171,
+            "kv_cache_gb": 9.0783,
+            "mamba_cache_size": 253,
+            "mamba_conv_gb": 0.0,
+            "mamba_ssm_gb": 3.4749,
+        },
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

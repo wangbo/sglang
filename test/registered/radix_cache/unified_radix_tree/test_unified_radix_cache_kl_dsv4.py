@@ -24,7 +24,7 @@ DSV4_FLASH_LAUNCH_TIMEOUT = 3600
 register_cuda_ci(est_time=1000, stage="extra-b", runner_config="4-gpu-h100")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-4-gpu-h100 samples=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 1, 1] updated=2026-07-17
+# gpu=h100 samples=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 147502,

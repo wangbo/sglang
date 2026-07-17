@@ -26,7 +26,7 @@ SKIP_TEST = torch.cuda.get_device_capability() < (10, 0)
 SKIP_REASON = "Requires Blackwell (B200, sm_100a) or above."
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-4-gpu-b200 samples=[3] updated=2026-07-17
+# gpu=b200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 2174895,

@@ -45,7 +45,7 @@ _MODEL_NAME = "Qwen/Qwen3-0.6B"
 _UP_PROJ_SHAPE = (3072, 1024)  # intermediate_size, hidden_size for Qwen3-0.6B
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-1-gpu samples=[1] updated=2026-07-17
+# gpu=h100 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 497866, "kv_cache_gb": 53.1828},
 ]

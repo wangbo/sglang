@@ -2,19 +2,24 @@
 
 Each test module (or class) declares floors explicitly::
 
-    # Floors for each sequential server launch (mean of recent CI * 0.99).
-    # Update with: python3 scripts/ci/utils/update_memory_thresholds.py
+    # Single-hardware (any GPU that runs this suite):
     MEMORY_CAPACITY_FLOORS = [
         {"token_capacity": 52358, "kv_cache_gb": 6.39},
     ]
 
+    # Multi-hardware (same test on H200 and B200, etc.):
+    MEMORY_CAPACITY_FLOORS = {
+        "h200": [{"token_capacity": 11111601, "kv_cache_gb": 11.92}],
+        "b200": [{"token_capacity": 15000000, "kv_cache_gb": 15.0}],
+    }
+
     class TestFoo(CustomTestCase):
-        # Optional per-class override (else the module list is used):
+        # Optional per-class override (else the module value is used):
         # memory_capacity_floors = [...]
 
 After ``popen_launch_server`` (or PD health) becomes ready, the harness
 ``GET /server_info`` and asserts observed capacity >= the next unused floor
-for the active test class / module.
+for the active test class / module and current GPU family.
 
 Offline: ``scripts/ci/utils/update_memory_thresholds.py`` mines scheduled
 PR-test / nightly logs and rewrites ``MEMORY_CAPACITY_FLOORS`` in each file.
@@ -54,6 +59,22 @@ CAPACITY_FIELDS = (
     "dsv4_c128",
     "dsv4_c4_state",
     "dsv4_c128_state",
+)
+
+# Stable GPU family keys used in MEMORY_CAPACITY_FLOORS dict form.
+# Longer / more specific tokens first for matching.
+GPU_FAMILY_TOKENS = (
+    "gb300",
+    "gb200",
+    "b200",
+    "h200",
+    "h100",
+    "h20",
+    "a100",
+    "5090",
+    "4090",
+    "l40s",
+    "l40",
 )
 
 # Module attribute name written by the update script / hand-authored tests.
@@ -339,20 +360,104 @@ def check_snapshot_against_floor(
     return failures
 
 
-def _floors_from_owner(owner: FloorOwner) -> Optional[List[FloorDict]]:
+def gpu_family_from_text(text: str) -> Optional[str]:
+    """Map suite / job / device name text to a stable GPU family key."""
+    s = text.lower().replace("_", "-")
+    for key in GPU_FAMILY_TOKENS:
+        if key in s:
+            return key
+    # Runner-config / suite shorthands without the chip in the name.
+    if "1-gpu-small" in s:
+        return "5090"
+    if "1-gpu-large" in s or "2-gpu-large" in s:
+        return "h100"
+    if re.search(r"(^|[^a-z])4-gpu-h100|deepep-4-gpu-h100", s):
+        return "h100"
+    if re.search(r"(^|[^a-z])4-gpu-b200|deepep-4-gpu-b200", s):
+        return "b200"
+    if re.search(r"8-gpu-h200|deepep-8-gpu-h200", s):
+        return "h200"
+    if re.search(r"8-gpu-b200", s):
+        return "b200"
+    if re.search(r"8-gpu-h20", s):
+        return "h20"
+    if "gb300" in s or "gb200" in s:
+        return "gb300" if "gb300" in s else "gb200"
+    return None
+
+
+def detect_gpu_family() -> Optional[str]:
+    """Runtime GPU family for selecting multi-hardware floors."""
+    env = os.environ.get("SGLANG_MEMORY_FLOOR_GPU", "").strip().lower()
+    if env:
+        return env
+    try:
+        import torch
+
+        if not torch.cuda.is_available():
+            return None
+        name = torch.cuda.get_device_properties(0).name
+    except Exception:
+        return None
+    return gpu_family_from_text(name)
+
+
+def _raw_floors_from_owner(owner: FloorOwner) -> Any:
     if isinstance(owner, type):
         class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
-        if class_floors:
-            return list(class_floors)
+        if class_floors is not None:
+            return class_floors
         mod = sys.modules.get(owner.__module__)
         if mod is not None:
-            mod_floors = getattr(mod, MODULE_FLOORS_ATTR, None)
-            if mod_floors:
-                return list(mod_floors)
+            return getattr(mod, MODULE_FLOORS_ATTR, None)
         return None
-    # module
-    mod_floors = getattr(owner, MODULE_FLOORS_ATTR, None)
-    return list(mod_floors) if mod_floors else None
+    return getattr(owner, MODULE_FLOORS_ATTR, None)
+
+
+def resolve_launch_floors(
+    floors_spec: Any, *, gpu_family: Optional[str] = None
+) -> Optional[List[FloorDict]]:
+    """Normalize MEMORY_CAPACITY_FLOORS list or per-GPU dict to a launch list.
+
+    * ``list`` — used on every GPU (single-runner tests).
+    * ``dict`` — keyed by GPU family (``h200``, ``b200``, …); only the entry
+      matching the current GPU is used. Missing key → no check (do not fall
+      back to another GPU's floors).
+    """
+    if floors_spec is None:
+        return None
+    if isinstance(floors_spec, list):
+        return list(floors_spec) if floors_spec else None
+    if isinstance(floors_spec, dict):
+        if not floors_spec:
+            return None
+        family = gpu_family if gpu_family is not None else detect_gpu_family()
+        if family is None:
+            logger.warning(
+                "MEMORY_CAPACITY_FLOORS is a per-GPU dict %s but GPU family "
+                "could not be detected; skipping memory floor check",
+                list(floors_spec.keys()),
+            )
+            return None
+        if family not in floors_spec:
+            logger.warning(
+                "MEMORY_CAPACITY_FLOORS has keys %s but no entry for "
+                "gpu_family=%s; skipping memory floor check",
+                list(floors_spec.keys()),
+                family,
+            )
+            return None
+        launches = floors_spec[family]
+        return list(launches) if launches else None
+    logger.warning(
+        "MEMORY_CAPACITY_FLOORS has unsupported type %s; expected list or dict",
+        type(floors_spec).__name__,
+    )
+    return None
+
+
+def _floors_from_owner(owner: FloorOwner) -> Optional[List[FloorDict]]:
+    return resolve_launch_floors(_raw_floors_from_owner(owner))
 
 
 def _owner_label(owner: FloorOwner) -> str:
@@ -367,15 +472,18 @@ def claim_next_memory_floor(owner: FloorOwner) -> Optional[tuple[FloorDict, int]
     if not floors:
         return None
     with _lock:
-        # Counter lives on the owner that actually holds the list (class if
+        # Counter lives on the owner that actually holds the floors (class if
         # class override, else the defining module) so multi-class files that
         # share module floors share one sequence.
         counter_owner: FloorOwner = owner
         if isinstance(owner, type):
             class_floors = getattr(owner, CLASS_FLOORS_ATTR, None)
-            if not class_floors:
+            if class_floors is None:
                 mod = sys.modules.get(owner.__module__)
-                if mod is not None and getattr(mod, MODULE_FLOORS_ATTR, None):
+                if (
+                    mod is not None
+                    and getattr(mod, MODULE_FLOORS_ATTR, None) is not None
+                ):
                     counter_owner = mod
         idx = int(getattr(counter_owner, _FLOOR_IDX_ATTR, 0))
         setattr(counter_owner, _FLOOR_IDX_ATTR, idx + 1)
@@ -406,11 +514,11 @@ def find_active_test_owner() -> Optional[FloorOwner]:
                 continue
         except TypeError:
             continue
-        if _floors_from_owner(cls) is not None:
+        if _raw_floors_from_owner(cls) is not None:
             return cls
     # Fallback: __main__ module floors (``python path/to/test.py``).
     main = sys.modules.get("__main__")
-    if main is not None and getattr(main, MODULE_FLOORS_ATTR, None):
+    if main is not None and getattr(main, MODULE_FLOORS_ATTR, None) is not None:
         return main
     return None
 

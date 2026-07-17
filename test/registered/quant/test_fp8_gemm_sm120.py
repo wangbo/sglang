@@ -18,7 +18,7 @@ PERTENSOR_MODEL_PATH = "nvidia/Llama-3.1-8B-Instruct-FP8"
 BLOCKWISE_MODEL_PATH = "Qwen/Qwen3-4B-Instruct-2507-FP8"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-1-gpu-small samples=[3, 3] updated=2026-07-17
+# gpu=5090 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 164860, "kv_cache_gb": 22.6314},
     {"token_capacity": 302192, "kv_cache_gb": 18.4536},

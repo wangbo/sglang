@@ -30,7 +30,7 @@ _KITS = (
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[4, 1] updated=2026-07-17
+# gpu=5090 samples=[4, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 72657, "kv_cache_gb": 8.8704},
     {"token_capacity": 72658, "kv_cache_gb": 8.8704},

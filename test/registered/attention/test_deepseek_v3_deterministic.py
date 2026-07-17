@@ -17,7 +17,7 @@ register_cuda_ci(est_time=240, suite="nightly-1-gpu", nightly=True)
 DEEPSEEK_MODEL = "lmsys/sglang-ci-dsv3-test"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-1-gpu samples=[1] updated=2026-07-17
+# gpu=h100 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 1225302, "kv_cache_gb": 39.4416},
 ]

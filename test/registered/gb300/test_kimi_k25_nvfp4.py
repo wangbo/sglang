@@ -41,7 +41,7 @@ DP_EAGLE_ARGS = [
 ]
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-gb300-kimi-k25-nvfp4 samples=[1, 1] updated=2026-07-17
+# gpu=gb300 samples=[1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 2319736, "kv_cache_gb": 75.9132},
     {"token_capacity": 1893893, "kv_cache_gb": 61.974},

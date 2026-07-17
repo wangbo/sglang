@@ -45,6 +45,7 @@ from sglang.test.memory_threshold import (  # noqa: E402
     DEFAULT_FACTOR,
     MODULE_FLOORS_ATTR,
     extract_snapshots_from_log,
+    gpu_family_from_text,
     mean_floor,
     normalize_test_file,
 )
@@ -83,6 +84,7 @@ class LaunchObservation:
     job_id: str
     launch_idx: int
     metrics: Dict[str, float]
+    gpu_family: str  # e.g. h200, b200, h100, 5090
 
 
 @dataclass
@@ -199,8 +201,14 @@ def parse_job_log(
     suite: str,
     run_id: str,
     job_id: str,
+    job_name: str = "",
 ) -> List[LaunchObservation]:
     suite = suite_from_run_suite_log(text) or suite
+    # Job display name often has the chip when the suite does not
+    # (e.g. nightly-8-gpu-common on 8-gpu-h200 vs 8-gpu-b200).
+    gpu_family = (
+        gpu_family_from_text(job_name) or gpu_family_from_text(suite) or "unknown"
+    )
     current_test: Optional[str] = None
     buffers: Dict[str, List[str]] = defaultdict(list)
     test_order: List[str] = []
@@ -235,6 +243,7 @@ def parse_job_log(
                     job_id=str(job_id),
                     launch_idx=idx,
                     metrics=snap,
+                    gpu_family=gpu_family,
                 )
             )
     return observations
@@ -247,7 +256,15 @@ def collect_from_log_dir(log_dir: Path) -> List[LaunchObservation]:
         first = text.splitlines()[0] if text else ""
         job_name = first.split("\t")[0] if "\t" in first else path.stem
         suite = suite_from_job_name(job_name)
-        obs.extend(parse_job_log(text, suite=suite, run_id="local", job_id=path.stem))
+        obs.extend(
+            parse_job_log(
+                text,
+                suite=suite,
+                run_id="local",
+                job_id=path.stem,
+                job_name=job_name,
+            )
+        )
     return obs
 
 
@@ -285,7 +302,13 @@ def collect_from_runs(
             text = dest.read_text(errors="replace")
             n_before = len(obs)
             obs.extend(
-                parse_job_log(text, suite=suite, run_id=str(run_id), job_id=str(jid))
+                parse_job_log(
+                    text,
+                    suite=suite,
+                    run_id=str(run_id),
+                    job_id=str(jid),
+                    job_name=name,
+                )
             )
             print(f"    +{len(obs) - n_before} launch snapshots", flush=True)
     return obs
@@ -306,15 +329,17 @@ def resolve_default_run_ids(limit: int) -> List[str]:
     return run_ids
 
 
-def group_by_file_suite(
+def group_by_file_gpu(
     obs: Sequence[LaunchObservation],
 ) -> Dict[Tuple[str, str], Dict[int, Aggregate]]:
-    """(test_file, suite) -> launch_idx -> Aggregate."""
+    """(test_file, gpu_family) -> launch_idx -> Aggregate."""
     grouped: Dict[Tuple[str, str], Dict[int, Aggregate]] = defaultdict(
         lambda: defaultdict(Aggregate)
     )
     for o in obs:
-        grouped[(o.test_file, o.suite)][o.launch_idx].add(o.metrics)
+        if o.gpu_family == "unknown":
+            continue
+        grouped[(o.test_file, o.gpu_family)][o.launch_idx].add(o.metrics)
     return grouped
 
 
@@ -333,99 +358,49 @@ def floors_for_group(
     return launches, sample_counts
 
 
-def registered_cuda_suites(path: Path) -> List[str]:
-    """Best-effort suite names from register_cuda_ci calls in the file."""
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except (OSError, SyntaxError):
-        return []
-    suites: List[str] = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        func = node.func
-        name = None
-        if isinstance(func, ast.Name):
-            name = func.id
-        elif isinstance(func, ast.Attribute):
-            name = func.attr
-        if name != "register_cuda_ci":
-            continue
-        kwargs = {k.arg: k.value for k in node.keywords if k.arg is not None}
-        suite_node = kwargs.get("suite")
-        stage_node = kwargs.get("stage")
-        runner_node = kwargs.get("runner_config")
-        nightly = False
-        if "nightly" in kwargs:
-            n = kwargs["nightly"]
-            nightly = isinstance(n, ast.Constant) and bool(n.value)
-
-        if isinstance(suite_node, ast.Constant) and isinstance(suite_node.value, str):
-            suites.append(suite_node.value)
-            continue
-        if (
-            isinstance(stage_node, ast.Constant)
-            and isinstance(runner_node, ast.Constant)
-            and isinstance(stage_node.value, str)
-            and isinstance(runner_node.value, str)
-        ):
-            suites.append(f"{stage_node.value}-test-{runner_node.value}")
-            continue
-        # Positional: register_cuda_ci(est_time, suite, ...)
-        if len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):
-            if isinstance(node.args[1].value, str):
-                suites.append(node.args[1].value)
-    # Prefer non-nightly first for floor selection.
-    non_nightly = [s for s in suites if not s.startswith("nightly-")]
-    return non_nightly + [s for s in suites if s.startswith("nightly-")]
-
-
-def pick_floors_for_file(
-    test_file: str,
-    by_suite: Dict[str, Tuple[List[Dict[str, float]], List[int]]],
-) -> Optional[Tuple[str, List[Dict[str, float]], List[int]]]:
-    """Choose which suite's floors to write for a test file."""
-    if not by_suite:
-        return None
-    if len(by_suite) == 1:
-        suite, (launches, counts) = next(iter(by_suite.items()))
-        return suite, launches, counts
-
-    path = REPO_ROOT / test_file
-    preferred = registered_cuda_suites(path) if path.is_file() else []
-    for suite in preferred:
-        if suite in by_suite:
-            launches, counts = by_suite[suite]
-            return suite, launches, counts
-
-    # Most total samples wins.
-    def score(item):
-        suite, (launches, counts) = item
-        return (sum(counts), -len(suite))
-
-    suite, (launches, counts) = max(by_suite.items(), key=score)
-    return suite, launches, counts
-
-
-def format_floors_block(
-    launches: List[Dict[str, float]],
-    *,
-    suite: str,
-    sample_counts: List[int],
-) -> str:
-    # Stable key order within each launch dict for readable diffs.
-    lines = [
-        _BEGIN,
-        f"# suite={suite} samples={sample_counts} "
-        f"updated={datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
-        f"{MODULE_FLOORS_ATTR} = [",
-    ]
+def _format_launch_list(launches: List[Dict[str, float]], *, indent: str) -> List[str]:
+    lines = [f"{indent}["]
+    inner = indent + "    "
     for launch in launches:
         items = ", ".join(
             f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
         )
-        lines.append(f"    {{{items}}},")
-    lines.append("]")
+        lines.append(f"{inner}{{{items}}},")
+    lines.append(f"{indent}]")
+    return lines
+
+
+def format_floors_block(
+    by_gpu: Dict[str, Tuple[List[Dict[str, float]], List[int]]],
+) -> str:
+    """Format list (single GPU) or dict (multi-GPU) MEMORY_CAPACITY_FLOORS."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    lines = [_BEGIN]
+    if len(by_gpu) == 1:
+        gpu, (launches, counts) = next(iter(by_gpu.items()))
+        lines.append(f"# gpu={gpu} samples={counts} updated={today}")
+        lines.append(f"{MODULE_FLOORS_ATTR} = [")
+        for launch in launches:
+            items = ", ".join(
+                f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
+            )
+            lines.append(f"    {{{items}}},")
+        lines.append("]")
+    else:
+        meta = ", ".join(f"{g}:samples={by_gpu[g][1]}" for g in sorted(by_gpu.keys()))
+        lines.append(f"# multi-gpu floors; {meta} updated={today}")
+        lines.append(f"{MODULE_FLOORS_ATTR} = {{")
+        for gpu in sorted(by_gpu.keys()):
+            launches, counts = by_gpu[gpu]
+            lines.append(f"    # samples={counts}")
+            lines.append(f'    "{gpu}": [')
+            for launch in launches:
+                items = ", ".join(
+                    f'"{k}": {launch[k]!r}' for k in CAPACITY_FIELDS if k in launch
+                )
+                lines.append(f"        {{{items}}},")
+            lines.append("    ],")
+        lines.append("}")
     lines.append(_END)
     return "\n".join(lines) + "\n"
 
@@ -481,12 +456,9 @@ def _strip_existing_floors_block(src: str) -> str:
 
 def inject_floors_into_source(
     src: str,
-    launches: List[Dict[str, float]],
-    *,
-    suite: str,
-    sample_counts: List[int],
+    by_gpu: Dict[str, Tuple[List[Dict[str, float]], List[int]]],
 ) -> str:
-    block = format_floors_block(launches, suite=suite, sample_counts=sample_counts)
+    block = format_floors_block(by_gpu)
     # Always strip + re-inject so a previous wrong position is corrected.
     src = _strip_existing_floors_block(src)
     idx = _find_injection_index(src)
@@ -499,26 +471,29 @@ def inject_floors_into_source(
 
 
 def write_floors_to_files(
-    file_floors: Dict[str, Tuple[str, List[Dict[str, float]], List[int]]],
+    file_floors: Dict[str, Dict[str, Tuple[List[Dict[str, float]], List[int]]]],
     *,
     dry_run: bool,
 ) -> int:
     updated = 0
-    for test_file, (suite, launches, counts) in sorted(file_floors.items()):
+    for test_file, by_gpu in sorted(file_floors.items()):
         path = REPO_ROOT / test_file
         if not path.is_file():
             print(f"  SKIP missing {test_file}", flush=True)
             continue
         old = path.read_text(encoding="utf-8")
-        new = inject_floors_into_source(
-            old, launches, suite=suite, sample_counts=counts
-        )
+        new = inject_floors_into_source(old, by_gpu)
+        gpus = ",".join(sorted(by_gpu.keys()))
+        n_launch = max(len(v[0]) for v in by_gpu.values())
         if new == old:
-            print(f"  unchanged {test_file} ({len(launches)} launch(s))", flush=True)
+            print(
+                f"  unchanged {test_file} gpus=[{gpus}] launches={n_launch}",
+                flush=True,
+            )
             continue
         print(
             f"  {'would update' if dry_run else 'update'} {test_file} "
-            f"suite={suite} launches={len(launches)} samples={counts}",
+            f"gpus=[{gpus}] launches={n_launch}",
             flush=True,
         )
         if not dry_run:
@@ -573,23 +548,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("Nothing to write.", file=sys.stderr)
         return 1
 
-    grouped = group_by_file_suite(observations)
-    # test_file -> suite -> (launches, counts)
-    per_file: Dict[str, Dict[str, Tuple[List[Dict[str, float]], List[int]]]] = (
+    grouped = group_by_file_gpu(observations)
+    # test_file -> gpu_family -> (launches, counts)
+    file_floors: Dict[str, Dict[str, Tuple[List[Dict[str, float]], List[int]]]] = (
         defaultdict(dict)
     )
-    for (test_file, suite), by_idx in grouped.items():
+    for (test_file, gpu), by_idx in grouped.items():
         launches, counts = floors_for_group(by_idx, factor=args.factor)
         if launches:
-            per_file[test_file][suite] = (launches, counts)
+            file_floors[test_file][gpu] = (launches, counts)
 
-    file_floors: Dict[str, Tuple[str, List[Dict[str, float]], List[int]]] = {}
-    for test_file, by_suite in sorted(per_file.items()):
-        picked = pick_floors_for_file(test_file, by_suite)
-        if picked:
-            file_floors[test_file] = picked
-
-    print(f"Floors for {len(file_floors)} test files", flush=True)
+    multi = sum(1 for v in file_floors.values() if len(v) > 1)
+    print(
+        f"Floors for {len(file_floors)} test files " f"({multi} multi-GPU)",
+        flush=True,
+    )
     n = write_floors_to_files(file_floors, dry_run=args.dry_run)
     print(
         f"{'Would update' if args.dry_run else 'Updated'} {n} file(s)",

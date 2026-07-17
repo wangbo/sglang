@@ -27,7 +27,7 @@ DSV4_FLASH_ENV = {
 DSV4_NIXL_SERVER_LAUNCH_TIMEOUT = 1800
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-deepep-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+# gpu=h200 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 9438612,

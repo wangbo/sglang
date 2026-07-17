@@ -35,7 +35,7 @@ SERVER_LAUNCH_TIMEOUT = 1000
 GSM8K_ACCURACY_THRESHOLD = 0.935
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-b200 samples=[1] updated=2026-07-17
+# gpu=b200 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 559405, "kv_cache_gb": 36.6102},
 ]

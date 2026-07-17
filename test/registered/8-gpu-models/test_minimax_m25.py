@@ -12,11 +12,19 @@ register_cuda_ci(est_time=1800, suite="nightly-8-gpu-common", nightly=True)
 MINIMAX_M25_MODEL_PATH = "MiniMaxAI/MiniMax-M2.5"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-common samples=[2, 2] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 3564753, "kv_cache_gb": 105.3855},
-    {"token_capacity": 432049, "kv_cache_gb": 102.1878},
-]
+# multi-gpu floors; b200:samples=[1, 1], h200:samples=[1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[1, 1]
+    "b200": [
+        {"token_capacity": 4108389, "kv_cache_gb": 121.4532},
+        {"token_capacity": 499973, "kv_cache_gb": 118.2654},
+    ],
+    # samples=[1, 1]
+    "h200": [
+        {"token_capacity": 3021117, "kv_cache_gb": 89.3178},
+        {"token_capacity": 364124, "kv_cache_gb": 86.1102},
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

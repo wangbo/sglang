@@ -24,7 +24,7 @@ register_amd_ci(
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[3, 3, 3, 3] updated=2026-07-17
+# gpu=5090 samples=[3, 3, 3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 36348, "kv_cache_gb": 4.4352},
     {"token_capacity": 15687, "kv_cache_gb": 7.6626},

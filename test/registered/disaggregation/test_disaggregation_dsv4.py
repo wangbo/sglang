@@ -35,7 +35,7 @@ _EAGLE_SPEC_ARGS = [
 ]
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-deepep-8-gpu-h200 samples=[3, 3] updated=2026-07-17
+# gpu=h200 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 5402073,

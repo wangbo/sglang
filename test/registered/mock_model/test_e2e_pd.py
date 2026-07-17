@@ -35,7 +35,7 @@ _INPUT_LEN = 6144
 _OUTPUT_LEN = 1024
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-2-gpu-large samples=[3, 3, 3, 2] updated=2026-07-17
+# gpu=h100 samples=[3, 3, 3, 2] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 600548, "kv_cache_gb": 64.152},
     {"token_capacity": 624581, "kv_cache_gb": 66.7062},

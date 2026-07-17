@@ -11,7 +11,7 @@ register_cuda_ci(est_time=200, stage="extra-a", runner_config="2-gpu-large")
 MODEL = "mistralai/Mistral-Small-4-119B-2603"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-2-gpu-large samples=[3, 3] updated=2026-07-17
+# gpu=h100 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 173383, "kv_cache_gb": 3.7224},
     {"token_capacity": 201578, "kv_cache_gb": 4.3263},

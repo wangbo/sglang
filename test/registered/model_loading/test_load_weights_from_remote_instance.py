@@ -42,7 +42,7 @@ register_cuda_ci(est_time=145, stage="extra-a", runner_config="2-gpu-large")
 register_amd_ci(est_time=72, suite="stage-b-test-2-gpu-large-amd")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-2-gpu-large samples=[3, 2] updated=2026-07-17
+# gpu=h100 samples=[3, 2] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 2022166, "kv_cache_gb": 61.7166},
     {"token_capacity": 2027981, "kv_cache_gb": 61.8948},

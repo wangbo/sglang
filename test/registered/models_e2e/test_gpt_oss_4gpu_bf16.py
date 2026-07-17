@@ -7,16 +7,29 @@ register_cuda_ci(est_time=220, stage="base-c", runner_config="4-gpu-h100")
 register_cuda_ci(est_time=220, stage="base-c", runner_config="4-gpu-b200")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-4-gpu-h100 samples=[3] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {
-        "token_capacity": 591801,
-        "kv_cache_gb": 5.0886,
-        "swa_size": 473440,
-        "full_size": 591801,
-        "swa_mem_gb": 9.1476,
-    },
-]
+# multi-gpu floors; b200:samples=[3], h100:samples=[3] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[3]
+    "b200": [
+        {
+            "token_capacity": 6152340,
+            "kv_cache_gb": 52.8066,
+            "swa_size": 4921847,
+            "full_size": 6152340,
+            "swa_mem_gb": 95.0499,
+        },
+    ],
+    # samples=[3]
+    "h100": [
+        {
+            "token_capacity": 591801,
+            "kv_cache_gb": 5.0886,
+            "swa_size": 473440,
+            "full_size": 591801,
+            "swa_mem_gb": 9.1476,
+        },
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

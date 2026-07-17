@@ -46,7 +46,7 @@ MODEL_SCORE_THRESHOLDS = {
 }
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-eval-text-2-gpu samples=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] updated=2026-07-17
+# gpu=h100 samples=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 406260, "kv_cache_gb": 49.599},
     {"token_capacity": 359262, "kv_cache_gb": 49.3416},

@@ -21,7 +21,7 @@ _NUM_MIDDLE_CHUNKS = (_PROMPT_LEN - 1) // _CHUNK_SIZE
 _LIFECYCLE_MAX_NEW_TOKENS = 4
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-a-test-1-gpu-small samples=[3] updated=2026-07-17
+# gpu=5090 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 240856, "kv_cache_gb": 25.7202},
 ]

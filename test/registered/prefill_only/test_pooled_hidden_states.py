@@ -44,7 +44,7 @@ _LOCAL_CAUSAL_LM_MODEL = "/shared/public/elr-models/meta-llama/Llama-3.2-1B-Inst
 import os
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-1-gpu-small samples=[3] updated=2026-07-17
+# gpu=5090 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 31170, "kv_cache_gb": 3.3264},
 ]

@@ -16,7 +16,7 @@ from sglang.test.test_utils import (
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-4-gpu-b200 samples=[3, 3] updated=2026-07-17
+# gpu=b200 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 2815718, "kv_cache_gb": 120.8394},
     {"token_capacity": 12507454, "kv_cache_gb": 143.1342},

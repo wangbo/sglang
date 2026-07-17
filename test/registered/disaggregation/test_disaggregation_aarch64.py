@@ -17,7 +17,7 @@ QWEN3_8B_MODEL_PATH = "Qwen/Qwen3-8B"
 register_cuda_ci(est_time=300, stage="base-c", runner_config="4-gpu-gb300")
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-4-gpu-gb300 samples=[2, 2] updated=2026-07-17
+# gpu=gb300 samples=[2, 2] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 3707890, "kv_cache_gb": 254.6082},
     {"token_capacity": 3489963, "kv_cache_gb": 239.6394},

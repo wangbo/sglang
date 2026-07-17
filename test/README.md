@@ -113,15 +113,20 @@ Server-launching e2e tests can pin KV / hybrid pool capacity so regressions
 fail CI. Declare floors on the **test module** (or class):
 
 ```python
-# Floors for each sequential server launch (mean of recent CI × 0.99).
-# Refresh: python3 scripts/ci/utils/update_memory_thresholds.py
+# Single-hardware suite (any GPU that runs this test):
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 52358, "kv_cache_gb": 6.39},
 ]
 
+# Same test on multiple NVIDIA runners (e.g. H200 + B200):
+MEMORY_CAPACITY_FLOORS = {
+    "h200": [{"token_capacity": 11111601, "kv_cache_gb": 11.92}],
+    "b200": [{"token_capacity": 15000000, "kv_cache_gb": 15.0}],
+}
+
 class TestFoo(CustomTestCase):
-    # Optional per-class override instead of the module list:
-    # memory_capacity_floors = [{"token_capacity": 52358}]
+    # Optional per-class override instead of the module value:
+    # memory_capacity_floors = [...]
 
     @classmethod
     def setUpClass(cls):
@@ -129,8 +134,10 @@ class TestFoo(CustomTestCase):
 ```
 
 After `popen_launch_server` (or PD prefill/decode health) succeeds, the harness
-`GET /server_info` and requires observed ≥ the next unused floor. No floors
-declared → no check.
+`GET /server_info` and requires observed ≥ the next unused floor for the
+**current GPU family** (`h200` / `b200` / `h100` / `5090` / …). List form applies
+on every GPU; dict form only checks the matching key (no cross-GPU fallback).
+No floors declared / missing GPU key → no check.
 
 ```bash
 # Mine scheduled/nightly logs and rewrite MEMORY_CAPACITY_FLOORS in test files

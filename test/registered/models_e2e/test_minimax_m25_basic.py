@@ -19,7 +19,7 @@ register_cuda_ci(est_time=250, stage="base-c", runner_config="8-gpu-h200")
 MINIMAX_M25_MODEL_PATH = "MiniMaxAI/MiniMax-M2.5"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-c-test-8-gpu-h200 samples=[3] updated=2026-07-17
+# gpu=h200 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 3021214, "kv_cache_gb": 89.3178},
 ]

@@ -22,7 +22,7 @@ register_cuda_ci(est_time=120, stage="base-b", runner_config="2-gpu-large")
 FORCE_RETRY_PROB = 0.1
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=base-b-test-2-gpu-large samples=[3] updated=2026-07-17
+# gpu=h100 samples=[3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 434298, "kv_cache_gb": 53.0244},
 ]

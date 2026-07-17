@@ -38,7 +38,7 @@ _DEEPEP_ENV = {
 }
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=extra-b-test-deepep-4-gpu-b200 samples=[3, 3] updated=2026-07-17
+# gpu=b200 samples=[3, 3] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 10588216,

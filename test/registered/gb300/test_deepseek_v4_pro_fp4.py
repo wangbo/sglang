@@ -91,7 +91,7 @@ PERFORMANCE_BATCH_SIZES = {
 }
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-4-gpu-gb300-deepseek-v4-pro-fp4 samples=[1, 1, 1] updated=2026-07-17
+# gpu=gb300 samples=[1, 1, 1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {
         "token_capacity": 1347287,

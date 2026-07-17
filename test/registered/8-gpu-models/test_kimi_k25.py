@@ -12,11 +12,19 @@ register_cuda_ci(est_time=3600, suite="nightly-8-gpu-common", nightly=True)
 KIMI_K25_MODEL_PATH = "moonshotai/Kimi-K2.5"
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-8-gpu-common samples=[2, 2] updated=2026-07-17
-MEMORY_CAPACITY_FLOORS = [
-    {"token_capacity": 772516, "kv_cache_gb": 50.5593},
-    {"token_capacity": 370071, "kv_cache_gb": 24.2253},
-]
+# multi-gpu floors; b200:samples=[1, 1], h200:samples=[1, 1] updated=2026-07-17
+MEMORY_CAPACITY_FLOORS = {
+    # samples=[1, 1]
+    "b200": [
+        {"token_capacity": 955975, "kv_cache_gb": 62.568},
+        {"token_capacity": 552942, "kv_cache_gb": 36.1944},
+    ],
+    # samples=[1, 1]
+    "h200": [
+        {"token_capacity": 589057, "kv_cache_gb": 38.5506},
+        {"token_capacity": 187200, "kv_cache_gb": 12.2562},
+    ],
+}
 # --- MEMORY_CAPACITY_FLOORS end ---
 
 

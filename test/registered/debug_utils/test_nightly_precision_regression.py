@@ -42,7 +42,7 @@ from sglang.test.test_utils import (
 )
 
 # --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---
-# suite=nightly-precision-8-gpu-h200 samples=[1] updated=2026-07-17
+# gpu=h200 samples=[1] updated=2026-07-17
 MEMORY_CAPACITY_FLOORS = [
     {"token_capacity": 4055, "kv_cache_gb": 0.3861},
 ]
