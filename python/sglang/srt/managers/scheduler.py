@@ -3888,7 +3888,7 @@ class Scheduler(
             "kvcache": round(kv_gb, 2),
             "graph": round(graph_gb, 2),
             "token_capacity": int(self.max_total_num_tokens),
-            # KV-related buffers only (MB). Used by MIN_KV_BUFFER_MB floors.
+            # KV-related buffers only (MB). Used by min_kv_buffer_mb floors.
             "kv_buffer_mb": round(kv_buffer_gb * 1024.0, 1),
         }
         if mamba_gb > 0:

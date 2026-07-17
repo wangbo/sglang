@@ -180,7 +180,7 @@ class PDDisaggregationServerBase(CustomTestCase):
         print(f"Server {url} is ready")
         # Prefill/decode sglang workers allocate KV/state pools; the LB/router
         # does not. popen_launch_pd_server only spawns (no health wait), so
-        # MIN_KV_BUFFER_MB is checked here once the worker is healthy.
+        # min_kv_buffer_mb is checked here once the worker is healthy.
         # EPD subclasses that used popen_launch_server already checked the
         # same pid — maybe_check skips duplicates.
         if process is None or process is getattr(cls, "process_lb", None):

@@ -109,30 +109,22 @@ This README mostly describes the NVIDIA GPU CI pipeline. Other hardware backends
 
 ## E2E KV Buffer Guard
 
-Server-launching e2e tests can pin **allocated KV-related buffer size** (MB)
-so capacity under-allocation fails CI.
+Same idea as accuracy thresholds: if the test sets a floor, assert the
+measured value is above it after the server is healthy.
 
-`/server_info` → `memory_usage.kv_buffer_mb` is:
-
-- token KV pools (including SWA full+swa, DSA index pools, unified buffer KV)
-- plus Mamba / GDN-like state pools when present
-
-**Not** included: model weights, CUDA graphs.
-
-Declare on the test module (or class as `min_kv_buffer_mb`):
+Metric: `/server_info` → `memory_usage.kv_buffer_mb` (allocated token KV
+including SWA/DSA/unified, plus Mamba/GDN state — not weights or CUDA graphs).
 
 ```python
-MIN_KV_BUFFER_MB = 12000
-
-# Multi-GPU (e.g. H200 + B200):
-MIN_KV_BUFFER_MB = {"h200": 12000, "b200": 18000}
-
-# Multi-launch:
-MIN_KV_BUFFER_MB = [12000, 800]
+class TestFoo(CustomTestCase):
+    # scalar when the test only runs on one GPU family
+    min_kv_buffer_mb = 12000
+    # or hardware-dependent when registered on multiple runners
+    min_kv_buffer_mb = {"h200": 12000, "b200": 18000}
 ```
 
-After `popen_launch_server` (or PD prefill/decode health) succeeds, the harness
-asserts `kv_buffer_mb >= floor`. No declaration → no check. Missing GPU key → skip.
+After `popen_launch_server` (or PD worker health): `assert kv_buffer_mb >= threshold`.
+No attribute → no check. Missing GPU key → skip.
 
 ```bash
 python3 scripts/ci/utils/update_memory_thresholds.py
