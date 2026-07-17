@@ -416,12 +416,19 @@ def find_active_test_owner() -> Optional[FloorOwner]:
 
 
 def memory_threshold_check_enabled() -> bool:
-    """On in CI by default; force with SGLANG_CHECK_MEMORY_THRESHOLDS=1/0."""
+    """On in NVIDIA CI by default; force with SGLANG_CHECK_MEMORY_THRESHOLDS=1/0.
+
+    Floors are mined from NVIDIA scheduled/nightly logs, so skip on AMD CI
+    (SGLANG_IS_IN_CI_AMD) where free GPU memory / capacity differ.
+    """
     flag = os.environ.get("SGLANG_CHECK_MEMORY_THRESHOLDS", "").lower()
     if flag in ("0", "false", "no", "off"):
         return False
+    # Explicit force-on still runs even on AMD (for local experiments).
     if flag in ("1", "true", "yes", "on"):
         return True
+    if os.environ.get("SGLANG_IS_IN_CI_AMD", "").lower() in ("1", "true", "yes"):
+        return False
     return os.environ.get("SGLANG_IS_IN_CI", "").lower() in ("1", "true", "yes")
 
 

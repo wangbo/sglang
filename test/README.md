@@ -139,6 +139,8 @@ python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
 ```
 
 Disable with `SGLANG_CHECK_MEMORY_THRESHOLDS=0`; force on with `=1`.
+Skipped automatically on AMD CI (`SGLANG_IS_IN_CI_AMD`) because floors come
+from NVIDIA logs.
 
 ## Other Notes
 
