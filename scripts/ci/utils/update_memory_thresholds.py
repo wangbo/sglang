@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Rewrite MIN_TOTAL_MEMORY_MB in e2e tests from CI logs or a JSON dump.
+"""Rewrite MIN_KV_BUFFER_MB in e2e tests from CI logs.
 
-``GET /server_info`` exposes ``memory_usage.total_mb`` (weights + KV + graph
-+ mamba, in MB). Tests declare::
+``GET /server_info`` → ``memory_usage.kv_buffer_mb`` is KV-related buffers only:
 
-    MIN_TOTAL_MEMORY_MB = 12345
-    # or per-GPU: MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
+  token KV pools (incl. SWA full+swa, DSA index, unified KV) + Mamba/GDN state
 
-This script mines scheduled/nightly job logs for lines that record total
-memory if present, otherwise falls back to summing weight/kv/graph GB lines
-when available. Prefer feeding server_info dumps once CI prints total_mb.
+Weights and CUDA graphs are excluded. Tests declare::
+
+    MIN_KV_BUFFER_MB = 12345
+    # or per-GPU: MIN_KV_BUFFER_MB = {"h200": 12000, "b200": 18000}
+
+This script mines scheduled/nightly job logs for ``kv_buffer_mb`` when present,
+otherwise falls back to KV + Mamba allocation log lines (GB → MB).
 
 Usage:
     python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
@@ -49,31 +51,31 @@ TEST_START_RE = re.compile(
 SUITE_FROM_RUN_SUITE_RE = re.compile(
     r"run_suite\.py\b[^\n]*?--suite\s+(?P<suite>[^\s\\]+)"
 )
-# Prefer explicit total_mb once servers log it; also accept GB totals.
-TOTAL_MB_RE = re.compile(
-    r"(?:total_mb|memory_usage\.total_mb)[=:\s]+(?P<mb>[\d.]+)",
+# Prefer explicit kv_buffer_mb once servers / harness log it.
+KV_BUFFER_MB_RE = re.compile(
+    r"(?:kv_buffer_mb|memory_usage\.kv_buffer_mb)[=:\s]+(?P<mb>[\d.]+)",
     re.I,
 )
-# Fallback: sum weight + kv + graph from server logs if printed in GB.
-WEIGHT_GB_RE = re.compile(r"weight[=:\s]+(?P<v>[\d.]+)\s*GB", re.I)
-# KV size from allocation lines (already in our engine logs).
+# Fallback: KV size from allocation lines (engine logs).
 KV_GB_RE = re.compile(
     r"KV Cache is allocated\.[^\n]*?(?:KV size:\s*(?P<kv>[\d.]+)\s*GB|"
     r"K size:\s*(?P<k>[\d.]+)\s*GB,\s*V size:\s*(?P<v>[\d.]+)\s*GB)"
 )
-GRAPH_GB_RE = re.compile(
-    r"(?:Capture cuda graph|cuda graph).*?mem usage=(?P<v>[\d.]+)\s*GB",
+# SWA logs its own total (full + swa) when used.
+SWA_GB_RE = re.compile(
+    r"SWAKVPool mem usage:\s*(?P<v>[\d.]+)\s*GB",
     re.I,
 )
+# Mamba / hybrid state (conv + ssm).
 MAMBA_GB_RE = re.compile(
-    r"Mamba Cache is allocated\.[^\n]*?"
+    r"(?:Mamba Cache is allocated|max_mamba_cache_size)[^\n]*?"
     r"conv_state size:\s*(?P<conv>[\d.]+)\s*GB,?\s*"
     r"ssm_state size:\s*(?P<ssm>[\d.]+)\s*GB",
     re.I,
 )
 
-_BEGIN = "# --- MIN_TOTAL_MEMORY_MB begin (auto; update_memory_thresholds.py) ---"
-_END = "# --- MIN_TOTAL_MEMORY_MB end ---"
+_BEGIN = "# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---"
+_END = "# --- MIN_KV_BUFFER_MB end ---"
 
 
 def _run(cmd: List[str], *, check: bool = True) -> str:
@@ -139,61 +141,40 @@ def normalize_test_file(path: str) -> str:
     return path.lstrip("./")
 
 
-def estimate_total_mb_from_chunk(text: str) -> Optional[float]:
-    """Best-effort total_mb from a log chunk belonging to one server start."""
-    m = TOTAL_MB_RE.search(text)
+def estimate_kv_buffer_mb_from_chunk(text: str) -> Optional[float]:
+    """Best-effort kv_buffer_mb from a log chunk for one server start.
+
+    Prefers an explicit ``kv_buffer_mb`` log line. Otherwise sums:
+    max(KV allocation, SWAKVPool) + mamba conv+ssm — never weight/graph.
+    """
+    m = KV_BUFFER_MB_RE.search(text)
     if m:
         return float(m.group("mb"))
 
-    kv_gb = None
-    for m in KV_GB_RE.finditer(text):
-        if m.group("kv") is not None:
-            kv_gb = float(m.group("kv"))
-        else:
-            kv_gb = float(m.group("k")) + float(m.group("v"))
-    # Keep the largest KV line (target vs draft → target).
-    # Re-scan for max:
-    kv_vals = []
+    # Keep the largest KV line (target vs draft → prefer larger target pool).
+    kv_vals: List[float] = []
     for m in KV_GB_RE.finditer(text):
         if m.group("kv") is not None:
             kv_vals.append(float(m.group("kv")))
         else:
             kv_vals.append(float(m.group("k")) + float(m.group("v")))
-    if kv_vals:
-        kv_gb = max(kv_vals)
-
-    weight_gb = None
-    # Model load lines vary; optional.
-    mw = re.search(
-        r"Load weight[^\n]*mem usage=(?P<v>[\d.]+)\s*GB", text, re.I
-    ) or re.search(r"mem usage=(?P<v>[\d.]+)\s*GB\.\s*$", text, re.M)
-    # Prefer explicit "Load weight ... mem usage="
-    mw = re.search(r"Load weight.*?mem usage=(?P<v>[\d.]+)\s*GB", text, re.I | re.S)
-    if mw:
-        weight_gb = float(mw.group("v"))
-
-    graph_gb = 0.0
-    gs = list(GRAPH_GB_RE.finditer(text))
-    if gs:
-        graph_gb = max(float(m.group("v")) for m in gs)
+    for m in SWA_GB_RE.finditer(text):
+        kv_vals.append(float(m.group("v")))
+    kv_gb = max(kv_vals) if kv_vals else None
 
     mamba_gb = 0.0
-    mm = MAMBA_GB_RE.search(text)
-    if mm:
-        mamba_gb = float(mm.group("conv")) + float(mm.group("ssm"))
+    for mm in MAMBA_GB_RE.finditer(text):
+        mamba_gb = max(mamba_gb, float(mm.group("conv")) + float(mm.group("ssm")))
 
-    if kv_gb is None and weight_gb is None:
+    if kv_gb is None and mamba_gb <= 0:
         return None
-    total_gb = (weight_gb or 0.0) + (kv_gb or 0.0) + graph_gb + mamba_gb
-    if total_gb <= 0:
-        return None
-    return round(total_gb * 1024.0, 1)
+    return round(((kv_gb or 0.0) + mamba_gb) * 1024.0, 1)
 
 
 def parse_job_log(
     text: str, *, job_name: str, run_id: str
 ) -> List[Tuple[str, str, float]]:
-    """Return list of (test_file, gpu_family, total_mb)."""
+    """Return list of (test_file, gpu_family, kv_buffer_mb)."""
     suite_m = SUITE_FROM_RUN_SUITE_RE.search(text)
     suite = suite_m.group("suite") if suite_m else ""
     gpu = gpu_family_from_text(job_name) or gpu_family_from_text(suite) or "unknown"
@@ -220,7 +201,7 @@ def parse_job_log(
         parts = re.split(r"(?=KV Cache is allocated\.)", body)
         seen = []
         for part in parts:
-            mb = estimate_total_mb_from_chunk(part)
+            mb = estimate_kv_buffer_mb_from_chunk(part)
             if mb is None:
                 continue
             # Dedupe near-identical consecutive (TP ranks).
@@ -229,7 +210,7 @@ def parse_job_log(
             seen.append(mb)
             out.append((tf, gpu, mb))
         if not seen:
-            mb = estimate_total_mb_from_chunk(body)
+            mb = estimate_kv_buffer_mb_from_chunk(body)
             if mb is not None:
                 out.append((tf, gpu, mb))
     return out
@@ -250,7 +231,7 @@ def collect(run_ids: Sequence[str], cache_dir: Path) -> List[Tuple[str, str, flo
                 continue
             text = dest.read_text(errors="replace")
             got = parse_job_log(text, job_name=name, run_id=str(run_id))
-            print(f"    +{len(got)} totals", flush=True)
+            print(f"    +{len(got)} kv_buffer samples", flush=True)
             obs.extend(got)
     return obs
 
@@ -327,6 +308,10 @@ def strip_block(src: str) -> str:
         (
             "# --- MEMORY_CAPACITY_FLOORS begin (auto; update_memory_thresholds.py) ---",
             "# --- MEMORY_CAPACITY_FLOORS end ---",
+        ),
+        (
+            "# --- MIN_TOTAL_MEMORY_MB begin (auto; update_memory_thresholds.py) ---",
+            "# --- MIN_TOTAL_MEMORY_MB end ---",
         ),
     ):
         if begin in src and end in src:

@@ -107,30 +107,35 @@ This README mostly describes the NVIDIA GPU CI pipeline. Other hardware backends
 - Each GitHub Actions job should take < 30 minutes; split if longer.
 - If tests are too slow for per-commit, consider nightly suites.
 
-## E2E Memory Capacity Guard
+## E2E KV Buffer Guard
 
-Server-launching e2e tests can pin **total memory** (MB) so under-allocation
-regressions fail CI. `/server_info` → `memory_usage.total_mb` is
-`weight + kvcache + graph (+ mamba)` in MB.
+Server-launching e2e tests can pin **allocated KV-related buffer size** (MB)
+so capacity under-allocation fails CI.
 
-Declare on the test module (or class as `min_total_memory_mb`):
+`/server_info` → `memory_usage.kv_buffer_mb` is:
+
+- token KV pools (including SWA full+swa, DSA index pools, unified buffer KV)
+- plus Mamba / GDN-like state pools when present
+
+**Not** included: model weights, CUDA graphs.
+
+Declare on the test module (or class as `min_kv_buffer_mb`):
 
 ```python
-MIN_TOTAL_MEMORY_MB = 12000
+MIN_KV_BUFFER_MB = 12000
 
 # Multi-GPU (e.g. H200 + B200):
-MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
+MIN_KV_BUFFER_MB = {"h200": 12000, "b200": 18000}
 
 # Multi-launch:
-MIN_TOTAL_MEMORY_MB = [12000, 800]
+MIN_KV_BUFFER_MB = [12000, 800]
 ```
 
 After `popen_launch_server` (or PD prefill/decode health) succeeds, the harness
-asserts `total_mb >= floor`. No declaration → no check. Missing GPU key → skip.
+asserts `kv_buffer_mb >= floor`. No declaration → no check. Missing GPU key → skip.
 
 ```bash
 python3 scripts/ci/utils/update_memory_thresholds.py
-python3 scripts/ci/utils/update_memory_thresholds.py --dry-run
 ```
 
 Disable: `SGLANG_CHECK_MEMORY_THRESHOLDS=0`. Force: `=1`.

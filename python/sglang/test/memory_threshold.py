@@ -1,24 +1,21 @@
-"""Minimal e2e guard: total server memory (MB) from ``GET /server_info``.
+"""E2E guard for allocated KV-related buffer size (MB).
+
+Metric (from ``GET /server_info`` → ``memory_usage.kv_buffer_mb``):
+
+  KV / SWA / DSA / unified token pools (``kvcache.mem_usage``)
+  + Mamba / GDN-like state pools when present
+
+Weights and CUDA-graph memory are **not** included.
 
 Declare on the test module or class::
 
-    # Single value: every server launch must report total_mb >= this.
-    MIN_TOTAL_MEMORY_MB = 12000
+    MIN_KV_BUFFER_MB = 12000
+    MIN_KV_BUFFER_MB = {"h200": 12000, "b200": 18000}
+    MIN_KV_BUFFER_MB = [12000, 800]  # multi-launch
 
-    # Per-GPU (same test on H200 and B200, etc.):
-    MIN_TOTAL_MEMORY_MB = {"h200": 12000, "b200": 18000}
+After ``popen_launch_server`` / PD health: assert ``kv_buffer_mb >= floor``.
 
-    # Per sequential launch (optional list):
-    MIN_TOTAL_MEMORY_MB = [12000, 800]
-
-After ``popen_launch_server`` / PD health, the harness reads
-``memory_usage.total_mb`` and asserts ``observed >= floor``.
-
-Refresh with ``scripts/ci/utils/update_memory_thresholds.py`` (mines CI logs
-or rewrites from recorded totals).
-
-Disabled on AMD CI (``SGLANG_IS_IN_CI_AMD``). Opt out with
-``SGLANG_CHECK_MEMORY_THRESHOLDS=0``.
+Disabled on AMD CI. Opt out: ``SGLANG_CHECK_MEMORY_THRESHOLDS=0``.
 """
 
 from __future__ import annotations
@@ -39,9 +36,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FACTOR = 0.99
 
-MODULE_MIN_ATTR = "MIN_TOTAL_MEMORY_MB"
-CLASS_MIN_ATTR = "min_total_memory_mb"
-_USED_ATTR = "_min_total_memory_mb_used"
+MODULE_MIN_ATTR = "MIN_KV_BUFFER_MB"
+CLASS_MIN_ATTR = "min_kv_buffer_mb"
+
+_USED_ATTR = "_min_kv_buffer_mb_used"
 _CHECKED_PIDS: set[int] = set()
 
 GPU_FAMILY_TOKENS = (
@@ -61,7 +59,6 @@ GPU_FAMILY_TOKENS = (
 _lock = threading.Lock()
 
 FloorOwner = Union[type, types.ModuleType]
-MinSpec = Union[int, float, List[Union[int, float]], Dict[str, Any]]
 
 
 def gpu_family_from_text(text: str) -> Optional[str]:
@@ -104,8 +101,8 @@ def detect_gpu_family() -> Optional[str]:
         return None
 
 
-def total_mb_from_server_info(info: Dict[str, Any]) -> Optional[float]:
-    """Extract total_mb from /server_info (internal_states or top-level)."""
+def kv_buffer_mb_from_server_info(info: Dict[str, Any]) -> Optional[float]:
+    """Extract kv_buffer_mb from /server_info."""
     mem = None
     internal = info.get("internal_states")
     if isinstance(internal, list) and internal and isinstance(internal[0], dict):
@@ -114,19 +111,20 @@ def total_mb_from_server_info(info: Dict[str, Any]) -> Optional[float]:
         mem = info.get("memory_usage")
     if not isinstance(mem, dict):
         return None
-    if mem.get("total_mb") is not None:
-        return float(mem["total_mb"])
-    # Fallback if an older server only has GB components.
+    if mem.get("kv_buffer_mb") is not None:
+        return float(mem["kv_buffer_mb"])
+    # Fallback for older servers: kvcache (+ mamba) in GB → MB.
     parts = []
-    for k in ("weight", "kvcache", "graph"):
-        if mem.get(k) is not None:
-            parts.append(float(mem[k]))
+    if mem.get("kvcache") is not None:
+        parts.append(float(mem["kvcache"]))
+    if mem.get("mamba") is not None:
+        parts.append(float(mem["mamba"]))
     if not parts:
         return None
     return round(sum(parts) * 1024.0, 1)
 
 
-def fetch_total_memory_mb(
+def fetch_kv_buffer_mb(
     base_url: str,
     *,
     api_key: Optional[str] = None,
@@ -141,7 +139,7 @@ def fetch_total_memory_mb(
         timeout=timeout,
     )
     resp.raise_for_status()
-    return total_mb_from_server_info(resp.json())
+    return kv_buffer_mb_from_server_info(resp.json())
 
 
 def _raw_min_from_owner(owner: FloorOwner) -> Any:
@@ -156,15 +154,10 @@ def _raw_min_from_owner(owner: FloorOwner) -> Any:
     return getattr(owner, MODULE_MIN_ATTR, None)
 
 
-def resolve_min_total_memory_mb(
+def resolve_min_kv_buffer_mb(
     spec: Any, *, gpu_family: Optional[str] = None
 ) -> Optional[List[float]]:
-    """Normalize MIN_TOTAL_MEMORY_MB to a list of floors (one per launch).
-
-    * ``int|float`` → ``[value]`` (same floor every launch)
-    * ``list`` → one floor per sequential launch
-    * ``dict`` → per GPU family; values are int/float or list
-    """
+    """Normalize MIN_KV_BUFFER_MB to a list of floors (one per launch)."""
     if spec is None:
         return None
     if isinstance(spec, (int, float)):
@@ -175,35 +168,35 @@ def resolve_min_total_memory_mb(
         family = gpu_family if gpu_family is not None else detect_gpu_family()
         if family is None:
             logger.warning(
-                "MIN_TOTAL_MEMORY_MB is per-GPU %s but GPU family unknown; skip",
+                "MIN_KV_BUFFER_MB is per-GPU %s but GPU family unknown; skip",
                 list(spec.keys()),
             )
             return None
         if family not in spec:
             logger.warning(
-                "MIN_TOTAL_MEMORY_MB keys %s have no entry for %s; skip",
+                "MIN_KV_BUFFER_MB keys %s have no entry for %s; skip",
                 list(spec.keys()),
                 family,
             )
             return None
-        return resolve_min_total_memory_mb(spec[family], gpu_family=family)
-    logger.warning("MIN_TOTAL_MEMORY_MB has unsupported type %s", type(spec).__name__)
+        return resolve_min_kv_buffer_mb(spec[family], gpu_family=family)
+    logger.warning("MIN_KV_BUFFER_MB has unsupported type %s", type(spec).__name__)
     return None
 
 
 def _counter_owner(owner: FloorOwner) -> FloorOwner:
     if isinstance(owner, type) and getattr(owner, CLASS_MIN_ATTR, None) is None:
         mod = sys.modules.get(owner.__module__)
-        if mod is not None and getattr(mod, MODULE_MIN_ATTR, None) is not None:
+        if mod is not None and _raw_min_from_owner(mod) is not None:
             return mod
     return owner
 
 
-def claim_min_total_mb(
+def claim_min_kv_buffer_mb(
     owner: FloorOwner, observed_mb: float
 ) -> Optional[tuple[float, int]]:
-    """Claim the unused floor closest to ``observed_mb`` (handles concurrent PD)."""
-    floors = resolve_min_total_memory_mb(_raw_min_from_owner(owner))
+    """Claim the unused floor closest to ``observed_mb``."""
+    floors = resolve_min_kv_buffer_mb(_raw_min_from_owner(owner))
     if not floors:
         return None
     with _lock:
@@ -212,7 +205,7 @@ def claim_min_total_mb(
         candidates = [i for i in range(len(floors)) if i not in used]
         if not candidates:
             logger.info(
-                "MIN_TOTAL_MEMORY_MB %s: all floors claimed; skip",
+                "MIN_KV_BUFFER_MB %s: all floors claimed; skip",
                 _owner_label(owner),
             )
             return None
@@ -242,7 +235,7 @@ def find_active_test_owner() -> Optional[FloorOwner]:
         if _raw_min_from_owner(cls) is not None:
             return cls
     main = sys.modules.get("__main__")
-    if main is not None and getattr(main, MODULE_MIN_ATTR, None) is not None:
+    if main is not None and _raw_min_from_owner(main) is not None:
         return main
     return None
 
@@ -280,7 +273,7 @@ def maybe_check_server_memory(
     process: Any = None,
     owner: Optional[FloorOwner] = None,
 ) -> None:
-    """Assert ``memory_usage.total_mb`` >= declared ``MIN_TOTAL_MEMORY_MB``."""
+    """Assert ``memory_usage.kv_buffer_mb`` >= declared ``MIN_KV_BUFFER_MB``."""
     if not memory_threshold_check_enabled():
         return
     if process is not None and process_memory_already_checked(process):
@@ -291,32 +284,30 @@ def maybe_check_server_memory(
         return
 
     try:
-        observed = fetch_total_memory_mb(base_url, api_key=api_key)
+        observed = fetch_kv_buffer_mb(base_url, api_key=api_key)
     except Exception as e:
-        logger.warning("Memory floor check skipped: /server_info failed (%s)", e)
+        logger.warning("KV buffer floor check skipped: /server_info failed (%s)", e)
         return
     if observed is None:
-        logger.warning(
-            "Memory floor check skipped: server_info has no memory_usage.total_mb"
-        )
+        logger.warning("KV buffer floor check skipped: server_info has no kv_buffer_mb")
         return
 
-    claimed = claim_min_total_mb(owner, observed)
+    claimed = claim_min_kv_buffer_mb(owner, observed)
     if claimed is None:
         return
     floor_mb, idx = claimed
     label = f"{_owner_label(owner)} floor[{idx}]"
     logger.info(
-        "Memory floor check %s: total_mb observed=%.1f floor=%.1f",
+        "KV buffer floor check %s: kv_buffer_mb observed=%.1f floor=%.1f",
         label,
         observed,
         floor_mb,
     )
     if observed < floor_mb:
         raise AssertionError(
-            f"Memory capacity regression ({label}): "
-            f"total_mb observed={observed:g} < floor={floor_mb:g}. "
-            f"Update MIN_TOTAL_MEMORY_MB after an intentional change via "
+            f"KV buffer capacity regression ({label}): "
+            f"kv_buffer_mb observed={observed:g} < floor={floor_mb:g}. "
+            f"Update MIN_KV_BUFFER_MB after an intentional change via "
             f"scripts/ci/utils/update_memory_thresholds.py"
         )
     if process is not None:

@@ -3854,36 +3854,42 @@ class Scheduler(
             success = False
         return success
 
-    def _build_memory_usage_dict(self) -> Dict[str, Any]:
-        """Memory breakdown for /server_info (GB components + total_mb)."""
+    def _kv_related_buffer_gb(self) -> tuple[float, float]:
+        """Allocated attention/state buffer size in GB: (kv_or_swa_gb, mamba_gb).
+
+        ``kvcache.mem_usage`` covers standard KV, SWA (full+swa), DSA index
+        pools, and unified-buffer KV. Mamba/GDN state lives on the req pool
+        and is added separately when present.
+        """
         kvcache = self.token_to_kv_pool_allocator.get_kvcache()
-        weight_gb = float(self.tp_worker.model_runner.weight_load_mem_usage)
         kv_gb = float(kvcache.mem_usage)
-        graph_gb = float(self.tp_worker.model_runner.graph_mem_usage)
-        # Include mamba/hybrid state if present (same units as kvcache: GB).
+
         mamba_gb = 0.0
         mamba_pool = getattr(self.req_to_token_pool, "mamba_pool", None)
-        if mamba_pool is not None:
-            mamba_cache = getattr(mamba_pool, "mamba_cache", None)
-            if mamba_cache is not None:
-                from sglang.srt.mem_cache.memory_pool import GB as _GB
-                from sglang.srt.mem_cache.memory_pool import get_tensor_size_bytes
+        if (
+            mamba_pool is not None
+            and getattr(mamba_pool, "mem_usage", None) is not None
+        ):
+            mamba_gb = float(mamba_pool.mem_usage)
+        return kv_gb, mamba_gb
 
-                for part in (
-                    getattr(mamba_cache, "conv", None),
-                    getattr(mamba_cache, "temporal", None),
-                ):
-                    if part is not None:
-                        mamba_gb += get_tensor_size_bytes(part) / _GB
+    def _build_memory_usage_dict(self) -> Dict[str, Any]:
+        """Memory breakdown for /server_info.
 
-        total_gb = weight_gb + kv_gb + graph_gb + mamba_gb
+        ``kv_buffer_mb`` is the CI floor metric: allocated KV/SWA/DSA/etc.
+        plus mamba-like state pools — not model weights or CUDA graphs.
+        """
+        weight_gb = float(self.tp_worker.model_runner.weight_load_mem_usage)
+        graph_gb = float(self.tp_worker.model_runner.graph_mem_usage)
+        kv_gb, mamba_gb = self._kv_related_buffer_gb()
+        kv_buffer_gb = kv_gb + mamba_gb
         mem: Dict[str, Any] = {
             "weight": round(weight_gb, 2),
             "kvcache": round(kv_gb, 2),
             "graph": round(graph_gb, 2),
             "token_capacity": int(self.max_total_num_tokens),
-            # Single number for CI memory floors (MB).
-            "total_mb": round(total_gb * 1024.0, 1),
+            # KV-related buffers only (MB). Used by MIN_KV_BUFFER_MB floors.
+            "kv_buffer_mb": round(kv_buffer_gb * 1024.0, 1),
         }
         if mamba_gb > 0:
             mem["mamba"] = round(mamba_gb, 2)
