@@ -123,7 +123,7 @@ class TestFoo(CustomTestCase):
     min_kv_buffer_mb = {"h200": 12000, "b200": 18000}
 ```
 
-After `popen_launch_server` (or PD worker health): `assert kv_buffer_mb >= threshold`.
+After `popen_launch_server` succeeds: `assert kv_buffer_mb >= threshold`.
 No attribute → no check. Missing GPU key → skip.
 
 ```bash

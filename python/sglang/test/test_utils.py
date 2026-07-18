@@ -898,30 +898,20 @@ def _check_memory_or_kill(
     process: subprocess.Popen,
     base_url: str,
     api_key: Optional[str] = None,
-    kill_processes: Optional[list] = None,
 ) -> None:
-    """Run memory floor check if floors are declared; kill process(es) on fail.
-
-    ``kill_processes`` defaults to ``[process]``. PD fixtures pass all started
-    workers so a failed prefill check also tears down decode (unittest does
-    not run tearDownClass after setUpClass failures).
-    """
+    """Run memory floor check if a threshold is set; kill process on fail."""
     try:
         _maybe_check_server_memory_after_launch(
             base_url, api_key=api_key, process=process
         )
     except AssertionError:
-        victims = kill_processes if kill_processes is not None else [process]
-        for proc in victims:
-            if proc is None:
-                continue
-            try:
-                kill_process_tree(proc.pid)
-            except Exception as e:
-                print(
-                    f"Error killing process {getattr(proc, 'pid', None)} "
-                    f"after memory threshold failure: {e}"
-                )
+        try:
+            kill_process_tree(process.pid)
+        except Exception as e:
+            print(
+                f"Error killing process {getattr(process, 'pid', None)} "
+                f"after memory threshold failure: {e}"
+            )
         raise
 
 

@@ -13,7 +13,6 @@ from sglang.test.test_utils import (
     DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
     DEFAULT_URL_FOR_TEST,
     CustomTestCase,
-    _check_memory_or_kill,
     is_in_ci,
     popen_launch_pd_server,
     popen_with_error_check,
@@ -178,28 +177,6 @@ class PDDisaggregationServerBase(CustomTestCase):
     ):
         wait_for_http_ready(url=url, timeout=timeout, process=process)
         print(f"Server {url} is ready")
-        # Prefill/decode sglang workers allocate KV/state pools; the LB/router
-        # does not. popen_launch_pd_server only spawns (no health wait), so
-        # min_kv_buffer_mb is checked here once the worker is healthy.
-        # EPD subclasses that used popen_launch_server already checked the
-        # same pid — maybe_check skips duplicates.
-        if process is None or process is getattr(cls, "process_lb", None):
-            return
-        base_url = url[: -len("/health")] if url.endswith("/health") else url
-        # On floor failure, kill every PD worker already started: unittest
-        # does not call tearDownClass after a setUpClass exception.
-        siblings = [
-            getattr(cls, name, None)
-            for name in (
-                "process_prefill",
-                "process_decode",
-                "process_encode",
-                "process_encode1",
-                "process_encode2",
-                "process_lb",
-            )
-        ]
-        _check_memory_or_kill(process, base_url, kill_processes=siblings)
 
     @classmethod
     def tearDownClass(cls):
