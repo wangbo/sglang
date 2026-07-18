@@ -22,6 +22,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=200, stage="base-a", runner_config="1-gpu-small")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 3832.0
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestBasicSanityDFlash(
     BasicAPIContractMixin,

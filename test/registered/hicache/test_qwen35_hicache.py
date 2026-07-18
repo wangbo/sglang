@@ -27,6 +27,11 @@ register_cuda_ci(est_time=540, stage="extra-b", runner_config="4-gpu-h100")
 QWEN35_27B_MODEL = "Qwen/Qwen3.5-27B"
 ACC_THRESHOLDS = {QWEN35_27B_MODEL: {"gsm8k": 0.8}}
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 9275.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestQwen35WithHiCache(CustomTestCase):
     @classmethod

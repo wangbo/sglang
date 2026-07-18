@@ -43,6 +43,11 @@ _LOCAL_CAUSAL_LM_MODEL = "/shared/public/elr-models/meta-llama/Llama-3.2-1B-Inst
 
 import os
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 3406.2
+# --- MIN_KV_BUFFER_MB end ---
+
 if _LOCAL_SEQCLS_MODEL and os.path.isdir(_LOCAL_SEQCLS_MODEL):
     _SEQCLS_MODEL = _LOCAL_SEQCLS_MODEL
 if _LOCAL_CAUSAL_LM_MODEL and os.path.isdir(_LOCAL_CAUSAL_LM_MODEL):

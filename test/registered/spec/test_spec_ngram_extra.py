@@ -10,6 +10,11 @@ from sglang.test.server_fixtures.ngram_fixture import NgramServerBase
 # Sibling per-commit file (test_spec_ngram.py) keeps the Paged variant.
 register_cuda_ci(est_time=400, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 49167.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestNgramSpeculativeDecodingTriton(NgramServerBase, GSM8KMixin):
     attention_backend = "triton"

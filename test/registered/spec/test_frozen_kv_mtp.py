@@ -19,6 +19,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=300, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=450, suite="stage-b-test-1-gpu-large-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 2666.2
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def get_server_info(base_url: str) -> dict:
     response = requests.get(base_url + "/server_info", timeout=10)

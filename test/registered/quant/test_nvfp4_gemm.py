@@ -16,6 +16,11 @@ register_cuda_ci(est_time=350, stage="base-c", runner_config="4-gpu-b200")
 
 MODEL_PATH = "nvidia/Llama-3.1-8B-Instruct-NVFP4"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 147927.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class FP4GemmBase:
     backend = None

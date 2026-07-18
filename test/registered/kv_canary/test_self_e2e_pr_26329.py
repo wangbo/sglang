@@ -27,6 +27,11 @@ _EAGLE_CHUNKED_SERVER_ARGS = (
     "4",
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 7096.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class _EagleChunkedRotationBase(CanaryE2EBase):
     model_mode = "mha"

@@ -38,6 +38,11 @@ logger = logging.getLogger(__name__)
 _QWEN3_30B_A3B_NUM_LAYERS = 48
 _QWEN3_30B_A3B_TOPK = 8
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 53323.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestReturnRoutedExperts(CustomTestCase):
     """End-to-end check that --enable-return-routed-experts stays correct

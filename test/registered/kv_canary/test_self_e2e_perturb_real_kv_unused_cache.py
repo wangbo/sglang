@@ -12,6 +12,11 @@ from sglang.test.kv_canary.e2e_base import CanaryE2EBase
 register_cuda_ci(est_time=60, stage="extra-a", runner_config="1-gpu-small")
 register_amd_ci(est_time=503, stage="extra-a", runner_config="1-gpu-small-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 7096.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class _PerturbRealKvUnusedCacheBase(CanaryE2EBase):
     kv_canary_mode = CanaryMode.LOG

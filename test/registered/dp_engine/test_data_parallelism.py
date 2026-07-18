@@ -17,6 +17,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=91, stage="base-b", runner_config="2-gpu-large")
 register_amd_ci(est_time=73, suite="stage-b-test-2-gpu-large-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 50789.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDataParallelism(CustomTestCase, GSM8KMixin):
     gsm8k_accuracy_thres = 0.7

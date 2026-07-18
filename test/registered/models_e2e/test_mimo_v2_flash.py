@@ -8,6 +8,11 @@ from sglang.test.server_fixtures.default_fixture import DefaultServerBase
 
 register_cuda_ci(est_time=350, stage="base-c", runner_config="8-gpu-h200")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26016.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestMiMoV2Flash(GSM8KMixin, SpecDecodingMixin, DefaultServerBase):
     gsm8k_accuracy_thres = 0.75

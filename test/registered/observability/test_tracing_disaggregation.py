@@ -36,6 +36,11 @@ logger = logging.getLogger(__name__)
 # CI registration - PD disaggregation requires 2 GPUs
 register_cuda_ci(est_time=65, stage="base-b", runner_config="2-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 54296.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestTraceDisaggregation(CustomTestCase):
     """Test tracing in PD disaggregation mode."""

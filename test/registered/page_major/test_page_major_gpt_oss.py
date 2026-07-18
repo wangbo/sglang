@@ -22,6 +22,11 @@ from sglang.test.test_utils import DEFAULT_MODEL_NAME_FOR_TEST_MXFP4_WITH_MOE
 
 register_cuda_ci(est_time=420, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 40459.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestPageMajorGptOss(DefaultServerBase):
     """Page-major KV layout on gpt-oss-20b (hybrid-SWA MoE), Triton backend."""

@@ -17,6 +17,11 @@ GQA_MODEL_PATH = "Qwen/Qwen3-30B-A3B-FP8"
 
 GSM8K_BASELINE_ACCURACY = 0.93
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 57399.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestGQACP2TP2EP2(CustomTestCase):
     @classmethod

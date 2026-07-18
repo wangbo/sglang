@@ -29,6 +29,11 @@ _KITS = (
     MatchedStopMixin,
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 9083.2
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class _Core(Eagle3Base):
     env_overrides = ((envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY, 1),)

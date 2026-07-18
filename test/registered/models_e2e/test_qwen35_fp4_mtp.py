@@ -52,6 +52,11 @@ MTP_BASE_ARGS = [
     '{"enable_multithread_load": true,"num_threads": 64}',
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 48741.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _run_mtp_gsm8k(test_case):
     args = SimpleNamespace(

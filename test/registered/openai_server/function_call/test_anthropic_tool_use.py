@@ -73,6 +73,11 @@ WEATHER_TOOL = {
     },
 }
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 63623.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestAnthropicToolUse(CustomTestCase):
     @classmethod

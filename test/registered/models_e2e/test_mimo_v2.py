@@ -41,6 +41,11 @@ MIMO_V2_MTP_OTHER_ARGS = MIMO_V2_OTHER_ARGS + [
     "--enable-multi-layer-eagle",
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 47062.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestMiMoV2(GSM8KMixin, MMMUServerBase):
     gsm8k_accuracy_thres = 0.75

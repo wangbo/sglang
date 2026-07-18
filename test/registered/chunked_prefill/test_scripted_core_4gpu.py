@@ -16,6 +16,11 @@ register_cuda_ci(est_time=900, stage="extra-b", runner_config="4-gpu-h100")
 
 _CHUNK_SIZE = 64
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 68063.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestScriptedPpChunkSweep(ScriptedTestCase):
     ENGINE_KWARGS = base_engine_kwargs(

@@ -23,6 +23,11 @@ register_amd_ci(
     disabled="see https://github.com/sgl-project/sglang/issues/11127",
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 25181.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class BaseTestOpenAIServerWithHiddenStates(ABC):
 

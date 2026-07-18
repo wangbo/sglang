@@ -33,6 +33,11 @@ register_amd_ci(est_time=130, suite="stage-b-test-1-gpu-small-amd")
 
 SERVER_ENV = {"SGLANG_USE_PICKLE_IPC": "0"}
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 24816.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestSRTEndpoint(CustomTestCase):
     @classmethod

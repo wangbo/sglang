@@ -20,6 +20,11 @@ _PROMPT_LEN = 4 * _CHUNK_SIZE - 3
 _NUM_MIDDLE_CHUNKS = (_PROMPT_LEN - 1) // _CHUNK_SIZE
 _LIFECYCLE_MAX_NEW_TOKENS = 4
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26337.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _advance_to_stage(r, stage: str):
     yield from advance_to_lifecycle_stage(

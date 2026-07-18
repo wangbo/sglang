@@ -37,6 +37,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=300, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 48315.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _data_uri():
     img = Image.new("RGB", (64, 64), (128, 128, 128))

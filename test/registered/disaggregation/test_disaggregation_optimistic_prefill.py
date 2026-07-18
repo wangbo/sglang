@@ -21,6 +21,11 @@ register_cuda_ci(est_time=120, stage="base-b", runner_config="2-gpu-large")
 
 FORCE_RETRY_PROB = 0.1
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 54296.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def rid_that_forces_retry(prefix: str) -> str:
     """Return a rid that the test retry sampler will select."""

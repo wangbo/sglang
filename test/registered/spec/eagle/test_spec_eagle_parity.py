@@ -22,6 +22,11 @@ register_xpu_ci(
 
 _is_xpu = is_xpu()
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 48876.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class _Eagle3ParityBase(Eagle3Base):
     """Shared knobs for EAGLE3 parity variants; no test methods."""

@@ -15,6 +15,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=73, stage="extra-a", runner_config="1-gpu-large")
 register_amd_ci(est_time=94, suite="extra-a-test-1-gpu-large-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 57419.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestFP8KVCacheTritonBackend(CustomTestCase):
     @classmethod

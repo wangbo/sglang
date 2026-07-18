@@ -23,6 +23,11 @@ _COMMON_ARGS = [
     "triton",
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 30544.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _make_args(*, page_size=1, track_interval=2):
     return [

@@ -31,6 +31,11 @@ INDEX_TOPK_FREQ = 2
 
 logger = logging.getLogger(__name__)
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 2422.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestReturnIndexerTopk(CustomTestCase):
     """Indexer-topk capture e2e test for DSv3.2 (DSA).

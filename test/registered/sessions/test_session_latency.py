@@ -56,6 +56,11 @@ SAMPLING_PARAMS = {
     "ignore_eos": True,
 }
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 40459.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @dataclass
 class TurnResult:

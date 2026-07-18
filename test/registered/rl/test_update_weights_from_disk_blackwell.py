@@ -15,6 +15,11 @@ from sglang.test.test_utils import (
     popen_launch_server,
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 146569.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class UpdateWeightsFromDiskBase:
     model = None

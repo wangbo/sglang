@@ -13,6 +13,11 @@ from sglang.test.test_utils import (
 # Multiple test classes: base, MLA, TorchCompile, SpecDecode variants
 register_cuda_ci(est_time=407, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 51296.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestHybridAttnBackendMLA(TestHybridAttnBackendBase):
     accuracy_threshold = 0.60

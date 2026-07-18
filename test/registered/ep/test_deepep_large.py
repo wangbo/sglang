@@ -19,6 +19,11 @@ register_cuda_ci(est_time=528, stage="extra-b", runner_config="deepep-8-gpu-h200
 
 DEEPSEEK_V32_MODEL_PATH = "deepseek-ai/DeepSeek-V3.2"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 22072.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skip("Skip for saving ci time")
 class TestDeepseek(CustomTestCase):

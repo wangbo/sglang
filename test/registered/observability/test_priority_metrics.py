@@ -30,6 +30,11 @@ register_cpu_ci(est_time=179, suite="base-c-test-cpu")
 
 _MODEL_NAME = "Qwen/Qwen3-0.6B"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 25992.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _parse_prometheus_metrics(metrics_text: str) -> Dict[str, List[Sample]]:
     result = {}

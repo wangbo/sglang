@@ -25,6 +25,11 @@ MODEL = "nvidia/Qwen3.5-397B-A17B-NVFP4"
 SKIP_TEST = torch.cuda.get_device_capability() < (10, 0)
 SKIP_REASON = "Requires Blackwell (B200, sm_100a) or above."
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 31852.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(SKIP_TEST, SKIP_REASON)
 class TestCuteDslFlashinferA2A(CustomTestCase):

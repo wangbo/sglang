@@ -16,6 +16,11 @@ register_cuda_ci(est_time=360, stage="extra-b", runner_config="4-gpu-h100")
 
 QWEN35 = "Qwen/Qwen3.5-35B-A3B"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 24188.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestQwen35Fa3Deterministic(TestDeterministicBase):
     @classmethod

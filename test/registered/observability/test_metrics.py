@@ -30,6 +30,11 @@ register_amd_ci(est_time=32, suite="stage-b-test-1-gpu-small-amd")
 
 _MODEL_NAME = "Qwen/Qwen3-0.6B"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26053.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestEnableMetrics(CustomTestCase):
     def test_metrics_1gpu(self):

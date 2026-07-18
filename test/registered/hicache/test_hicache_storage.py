@@ -18,6 +18,11 @@ from sglang.test.test_utils import (
 
 _is_hip = is_hip()
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 6548.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestHiCache(CustomTestCase, MMLUMixin):
     mmlu_score_threshold = 0.65

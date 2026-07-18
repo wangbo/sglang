@@ -16,6 +16,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=100, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 64353.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def check_quant_method(model_path: str, use_marlin_kernel: bool):
     from sglang.srt.configs.device_config import DeviceConfig

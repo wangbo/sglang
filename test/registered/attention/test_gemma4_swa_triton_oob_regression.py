@@ -38,6 +38,11 @@ NUM_REQUESTS = 180
 CONCURRENCY = 128
 MAX_TOKENS = 256
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 2848.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestGemma4SwaTritonOobRegression(CustomTestCase):
     @classmethod

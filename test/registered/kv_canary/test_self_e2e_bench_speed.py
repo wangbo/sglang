@@ -32,6 +32,11 @@ _PROFILE_NO_GRAPH_OUTPUT_LEN = 3
 # start_profile blocks until num_steps server steps complete, so it must be <= actual decode steps.
 _PROFILE_NO_GRAPH_STEPS = 3
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 8718.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _make_server_args(
     *, canary_on: bool, disable_cuda_graph: bool = False

@@ -24,6 +24,11 @@ from sglang.test.test_utils import DEFAULT_HYBRID_GDN_SMALL_MODEL_NAME_FOR_TEST
 
 register_cuda_ci(est_time=300, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 31000.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestPageMajorQwenHybrid(DefaultServerBase):
     """Page-major KV layout on Qwen3.5-4B (GDN-hybrid), Triton backends."""

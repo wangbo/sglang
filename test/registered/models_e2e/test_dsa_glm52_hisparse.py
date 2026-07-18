@@ -11,6 +11,11 @@ register_cuda_ci(est_time=720, stage="extra-b", runner_config="8-gpu-h200")
 
 GLM52_FP8_MODEL_PATH = "zai-org/GLM-5.2-FP8"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 21207.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestGLM52HiSparse(DefaultServerBase, GSM8KMixin):
     """GLM-5.2 FP8 with HiSparse (host-to-device sparse KV offload) on DSA decode.

@@ -26,6 +26,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=691, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=691, suite="stage-b-test-1-gpu-large-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 67131.2
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestStreamingSession(StreamingSessionServerBase, StreamingSessionKitMixin):
     """Default streaming-session config (small model, no spec)."""

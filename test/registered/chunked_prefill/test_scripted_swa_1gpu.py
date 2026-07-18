@@ -26,6 +26,11 @@ _STEPS_PER_CANDIDATE = 120
 _DECODER_WARMUP_STEPS = 60
 _DRAIN_STEPS = 400
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 101.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestScriptedSwaChunkedReqEarlyReturn(ScriptedTestCase):
     ENGINE_KWARGS = base_engine_kwargs(

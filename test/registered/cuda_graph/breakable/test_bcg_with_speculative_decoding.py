@@ -14,6 +14,11 @@ from sglang.test.server_fixtures.pcg_spec_fixture import PCGSpecBase
 
 register_cuda_ci(est_time=531, stage="base-b", runner_config="2-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 17071.7
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestBCGWithEAGLE3(PCGSpecBase, unittest.TestCase):
     """BCG + EAGLE3 on Qwen3-30B-A3B-Instruct-2507."""

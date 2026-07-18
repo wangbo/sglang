@@ -17,6 +17,11 @@ register_cuda_ci(est_time=450, stage="extra-b", runner_config="8-gpu-h200")
 
 DEEPSEEK_V32_MODEL_PATH = "deepseek-ai/DeepSeek-V3.2"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 43713.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDeepseekV32IndexTopkPattern(CustomTestCase):
     @classmethod

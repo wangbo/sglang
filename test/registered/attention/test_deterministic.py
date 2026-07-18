@@ -19,6 +19,11 @@ from sglang.test.test_utils import is_in_amd_ci
 register_cuda_ci(est_time=207, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=278, suite="stage-b-test-1-gpu-small-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 50911.0
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(is_in_amd_ci(), "Skip for AMD CI.")
 class TestFlashinferDeterministic(TestDeterministicBase):

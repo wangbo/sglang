@@ -1,5 +1,10 @@
 from sglang.test.ci.ci_register import register_amd_ci, register_cuda_ci
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 63664.1
+# --- MIN_KV_BUFFER_MB end ---
+
 """Test distributed weight updates.
 
 This test suite simulates a distributed training environment to ensure

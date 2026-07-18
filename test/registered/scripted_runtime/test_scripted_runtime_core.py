@@ -27,6 +27,11 @@ _DECODE_MAX_NEW_TOKENS = 8
 
 _ENGINE_KWARGS = base_engine_kwargs(chunked_prefill_size=_CHUNK_SIZE)
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26337.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _script_noop(t: ScriptedContext):
     yield

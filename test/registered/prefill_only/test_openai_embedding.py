@@ -16,6 +16,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=91, stage="base-b", runner_config="1-gpu-small")
 register_amd_ci(est_time=141, suite="stage-b-test-1-gpu-small-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 23640.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestOpenAIEmbedding(CustomTestCase):
     @classmethod

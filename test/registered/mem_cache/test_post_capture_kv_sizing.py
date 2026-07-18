@@ -33,6 +33,11 @@ register_cuda_ci(est_time=240, stage="base-b", runner_config="1-gpu-large")
 STDOUT_FILENAME = "post_capture_kv_sizing_stdout.log"
 STDERR_FILENAME = "post_capture_kv_sizing_stderr.log"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 63684.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestPostCaptureKVSizing(CustomTestCase):
     @classmethod

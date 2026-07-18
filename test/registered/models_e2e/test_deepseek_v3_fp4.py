@@ -11,6 +11,11 @@ register_cuda_ci(est_time=960, stage="base-c", runner_config="4-gpu-b200")
 
 FULL_DEEPSEEK_V3_FP4_MODEL_PATH = "nvidia/DeepSeek-V3-0324-FP4"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 57226.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDeepseekV3FP4SymmetricMemory(GSM8KMixin, DefaultServerBase):
     model = FULL_DEEPSEEK_V3_FP4_MODEL_PATH

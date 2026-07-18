@@ -18,6 +18,11 @@ NEMOTRON_3_NANO_THINKING_ARGS = [
     "deepseek-r1",
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26114.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestNvidiaNemotron3Nano30BFP8(LMEvalMixin, DefaultServerBase):
     """Test Nemotron-3-Nano-30B FP8 model with lm-eval GSM8K evaluation."""

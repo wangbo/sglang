@@ -16,6 +16,11 @@ register_amd_ci(est_time=55, suite="stage-b-test-1-gpu-small-amd")
 
 MODEL = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 24816.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestRadixCacheHit(CustomTestCase):
     @classmethod

@@ -10,6 +10,11 @@ from sglang.test.server_fixtures.ngram_fixture import NgramServerBase
 # - Triton + Flashinfer moved to test_spec_ngram_extra.py
 register_cuda_ci(est_time=400, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 49167.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestNgramSpeculativeDecodingPaged(NgramServerBase, GSM8KMixin, SpecLogprobKit):
     attention_backend = "flashinfer"

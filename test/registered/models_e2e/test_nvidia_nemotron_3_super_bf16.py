@@ -28,6 +28,11 @@ NEMOTRON_3_SUPER_BF16_ARGS = [
     '{"enable_multithread_load": true, "num_threads": 50}',
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 50302.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestNvidiaNemotron3SuperBF16(CustomTestCase):
     @classmethod

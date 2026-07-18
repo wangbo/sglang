@@ -40,6 +40,11 @@ _MODEL = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
 _tokenizer = None
 _ref_model = None
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 25039.9
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _load_ref():
     global _tokenizer, _ref_model

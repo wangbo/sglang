@@ -18,6 +18,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=443, stage="base-c", runner_config="8-gpu-h20")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h20 updated=2026-07-18
+MIN_KV_BUFFER_MB = 73933.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDisaggregationDPAttention(PDDisaggregationServerBase):
     """PD-disagg + DP-attention e2e on `total_tokens` LB — the most complex

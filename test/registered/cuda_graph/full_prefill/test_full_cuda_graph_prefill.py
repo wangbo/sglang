@@ -27,6 +27,11 @@ from sglang.test.test_utils import (
 # CI Registration — large suite to fit the integration test's server startup.
 register_cuda_ci(est_time=79, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 50525.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestFullCudaGraphPrefill(CustomTestCase):
     """Integration: Qwen3-8B with --cuda-graph-backend-prefill=full on mgsm_en."""

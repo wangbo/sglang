@@ -18,6 +18,11 @@ register_amd_ci(est_time=850, suite="stage-b-test-1-gpu-small-amd-nondeterminist
 
 _is_hip = is_hip()
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 54330.8
+# --- MIN_KV_BUFFER_MB end ---
+
 # VLM models for testing
 if _is_hip:
     MODELS = [

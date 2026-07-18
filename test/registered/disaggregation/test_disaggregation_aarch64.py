@@ -16,6 +16,11 @@ QWEN3_8B_MODEL_PATH = "Qwen/Qwen3-8B"
 
 register_cuda_ci(est_time=300, stage="base-c", runner_config="4-gpu-gb300")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=gb300 updated=2026-07-18
+MIN_KV_BUFFER_MB = 260718.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDisaggregationMooncakeAARCH64Accuracy(PDDisaggregationServerBase):
     @classmethod

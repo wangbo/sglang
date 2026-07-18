@@ -14,6 +14,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=62, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 57358.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestModeloptFP8(CustomTestCase):
 

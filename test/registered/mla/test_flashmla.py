@@ -22,6 +22,11 @@ from sglang.test.test_utils import (
 # FlashMLA attention backend tests with MTP speculative decoding
 register_cuda_ci(est_time=160, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 37012.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestFlashMLAMTP(CustomTestCase):
     @classmethod

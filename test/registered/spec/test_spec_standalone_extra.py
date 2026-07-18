@@ -15,6 +15,11 @@ register_amd_ci(est_time=103, suite="extra-a-test-1-gpu-large-amd")
 
 _AMD_SKIP_BACKEND = "fa3 / flashinfer attention backends are CUDA-only (not in the ROCm sgl_kernel build)"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 25384.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(is_hip(), _AMD_SKIP_BACKEND)
 class TestStandaloneSpeculativeDecodingBase(StandaloneServerBase, CustomTestCase):

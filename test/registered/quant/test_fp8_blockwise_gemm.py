@@ -17,6 +17,11 @@ register_cuda_ci(est_time=430, stage="extra-b", runner_config="4-gpu-b200")
 MODEL_PATH = "Qwen/Qwen3-4B-Instruct-2507-FP8"
 MXFP8_MODEL_PATH = "zianglih/Qwen3-4B-Instruct-2507-MXFP8"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 149347.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class FP8BlockwiseGemmBase:
     backend = None

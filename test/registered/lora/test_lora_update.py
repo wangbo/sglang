@@ -54,6 +54,11 @@ PROMPTS = [
 
 MEM_FRACTION_STATIC = 0.8
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 45315.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class OperationType(Enum):
     LOAD = "load"

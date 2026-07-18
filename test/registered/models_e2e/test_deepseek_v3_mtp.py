@@ -31,6 +31,11 @@ _OTHER_ARGS = [
     '{"enable_multithread_load": true, "num_threads": 64}',
 ]
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 35430.9
+# --- MIN_KV_BUFFER_MB end ---
+
 if not is_in_amd_ci():
     _OTHER_ARGS += ["--mem-frac", "0.85"]
 

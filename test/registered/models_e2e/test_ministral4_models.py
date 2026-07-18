@@ -10,6 +10,11 @@ register_cuda_ci(est_time=200, stage="extra-a", runner_config="2-gpu-large")
 
 MODEL = "mistralai/Mistral-Small-4-119B-2603"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 4430.2
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestMistralSmall4TextOnly(GSM8KMixin, DefaultServerBase):
     gsm8k_accuracy_thres = 0.9

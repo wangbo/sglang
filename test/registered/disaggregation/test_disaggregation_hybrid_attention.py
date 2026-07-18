@@ -14,6 +14,11 @@ from sglang.test.test_utils import (
 
 register_cuda_ci(est_time=310, stage="extra-b", runner_config="8-gpu-h200")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 124043.7
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(is_in_ci(), "Temporarily disable the flaky test.")
 class TestDisaggregationHybridAttentionGDN(PDDisaggregationServerBase):

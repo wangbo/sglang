@@ -24,6 +24,11 @@ _SPEC_EAGLE_REVERT_PR_ENV = {
 _CUDA_GRAPH_MAX_BS = 1
 _EAGER_DRAFT_REQUEST_COUNT = 20
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=5090 updated=2026-07-18
+MIN_KV_BUFFER_MB = 7096.3
+# --- MIN_KV_BUFFER_MB end ---
+
 assert _EAGER_DRAFT_REQUEST_COUNT > _CUDA_GRAPH_MAX_BS
 
 _SPEC_EAGLE_SERVER_ARGS = (

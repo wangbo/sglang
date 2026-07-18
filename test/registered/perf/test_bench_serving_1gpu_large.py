@@ -20,6 +20,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=286, stage="extra-a", runner_config="1-gpu-large")
 register_amd_ci(est_time=300, suite="stage-b-test-1-gpu-large-amd")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 57358.5
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestBenchServing1GPULarge(CustomTestCase):
     def test_offline_throughput_default_fp8(self):

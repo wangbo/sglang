@@ -19,6 +19,11 @@ register_cuda_ci(est_time=82, stage="base-c", runner_config="deepep-4-gpu-h100")
 
 ib_devices = get_rdma_devices_args()
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 26246.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestTP(CustomTestCase):
     extra_args = []

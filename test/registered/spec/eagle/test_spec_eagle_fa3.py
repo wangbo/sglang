@@ -20,6 +20,11 @@ from sglang.test.server_fixtures.spec_eagle_fixture import Eagle3Base, EagleLlam
 
 register_cuda_ci(est_time=600, stage="base-b", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 48741.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestEagle3Fa3(Eagle3Base, SpecCorrectnessKit, SpecAccuracyKit, SpecLogprobKit):
     """EAGLE3 spec v2 topk=1 on fa3 (the H200 default backend)."""

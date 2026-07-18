@@ -26,6 +26,11 @@ from sglang.test.test_utils import (
 register_cuda_ci(est_time=79, stage="base-b", runner_config="1-gpu-large")
 register_amd_ci(est_time=200, suite="stage-c-test-large-8-gpu-amd-mi35x")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 49937.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestBreakableCUDAGraphBasic(CustomTestCase):
     """Test basic breakable CUDA graph capture and replay."""

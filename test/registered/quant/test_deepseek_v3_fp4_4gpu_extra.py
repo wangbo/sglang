@@ -24,6 +24,11 @@ register_cuda_ci(est_time=960, stage="extra-b", runner_config="4-gpu-b200")
 FULL_DEEPSEEK_V3_FP4_MODEL_PATH = "nvidia/DeepSeek-V3-0324-FP4"
 SERVER_LAUNCH_TIMEOUT = 1200
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 56993.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestDeepseekV3FP4CutlassMoE(CustomTestCase):
     @classmethod

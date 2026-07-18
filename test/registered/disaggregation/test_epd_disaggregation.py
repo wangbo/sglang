@@ -38,6 +38,11 @@ QWEN35_27B_MODEL = "Qwen/Qwen3.5-27B"
 
 register_cuda_ci(est_time=97, stage="base-c", runner_config="4-gpu-h100")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 59548.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(
     is_in_ci(),

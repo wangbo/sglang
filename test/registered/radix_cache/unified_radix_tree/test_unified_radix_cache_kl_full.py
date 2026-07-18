@@ -16,6 +16,11 @@ register_amd_ci(est_time=400, suite="stage-b-test-2-gpu-large-amd")
 
 FULL_MODEL = "Qwen/Qwen3-32B"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 31933.4
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestUnifiedFullRadixCache(UnifiedRadixTreeTestMixin, CustomTestCase):
     """Full attention."""

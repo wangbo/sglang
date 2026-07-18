@@ -14,6 +14,11 @@ register_cuda_ci(
     runner_config="8-gpu-h200",
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 19048.6
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestGLM52TPMTP(
     DsaMtpServerBase, DsaMtpEvalConfigDefaults, GSM8KMixin, SpecDecodingMixin

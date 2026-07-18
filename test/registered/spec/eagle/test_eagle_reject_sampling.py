@@ -20,6 +20,11 @@ register_cuda_ci(est_time=300, stage="base-b", runner_config="2-gpu-large")
 QWEN35_MODEL = "Qwen/Qwen3.5-9B"
 SERVER_LAUNCH_TIMEOUT = 600
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 45923.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestQwen35EagleRS(CustomTestCase):
     @classmethod

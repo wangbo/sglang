@@ -19,6 +19,11 @@ from sglang.test.test_utils import CustomTestCase
 
 register_cuda_ci(est_time=200, stage="extra-a", runner_config="1-gpu-large")
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 6373.2
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipIf(is_hip(), "HiCache + EAGLE3 file-storage loadback e2e is CUDA-only.")
 class TestHiCacheSpecFileStorage(HiCacheSpecStorageMixin, CustomTestCase):

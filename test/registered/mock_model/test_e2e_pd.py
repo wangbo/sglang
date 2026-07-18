@@ -34,6 +34,11 @@ _NUM_PROMPTS = 32
 _INPUT_LEN = 6144
 _OUTPUT_LEN = 1024
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 68307.1
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _send_parallel_requests(
     base_url: str,

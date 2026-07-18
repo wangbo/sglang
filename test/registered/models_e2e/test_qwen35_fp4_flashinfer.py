@@ -23,6 +23,11 @@ _is_sm100_cuda13 = (
     and _cuda_major >= 13
 )
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=b200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 52289.7
+# --- MIN_KV_BUFFER_MB end ---
+
 
 @unittest.skipUnless(_is_sm100_cuda13, "requires SM100+ GPU and CUDA 13+")
 class TestQwen35FP4FlashInfer(CustomTestCase):

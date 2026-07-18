@@ -12,6 +12,11 @@ register_cuda_ci(est_time=480, stage="extra-b", runner_config="8-gpu-h200")
 
 STEP3P5_FLASH_MODEL_PATH = "stepfun-ai/Step-3.5-Flash"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 56973.3
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestStep3p5FlashChainMTP(GSM8KMixin, DefaultServerBase):
     """Chain-style multi-layer EAGLE speculative decoding on Step-3.5-Flash.

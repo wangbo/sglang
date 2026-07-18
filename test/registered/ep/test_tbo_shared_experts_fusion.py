@@ -16,6 +16,11 @@ register_cuda_ci(est_time=900, stage="extra-b", runner_config="deepep-8-gpu-h200
 
 DEEPSEEK_V3_MODEL_PATH = "deepseek-ai/DeepSeek-V3-0324"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h200 updated=2026-07-18
+MIN_KV_BUFFER_MB = 12672.0
+# --- MIN_KV_BUFFER_MB end ---
+
 
 class TestTBOWithSharedExpertsFusion(CustomTestCase):
     @classmethod

@@ -17,6 +17,11 @@ register_cuda_ci(est_time=900, stage="base-c", runner_config="4-gpu-h100")
 
 QWEN3_32B_MODEL = "Qwen/Qwen3-32B"
 
+# --- MIN_KV_BUFFER_MB begin (auto; update_memory_thresholds.py) ---
+# gpu=h100 updated=2026-07-18
+MIN_KV_BUFFER_MB = 871.8
+# --- MIN_KV_BUFFER_MB end ---
+
 
 def _assert_pp_decode_cached_tokens(result, history_len, output_len, label):
     expected = history_len + output_len
